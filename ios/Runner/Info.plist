@@ -41,6 +41,10 @@
 		<string>UIInterfaceOrientationLandscapeLeft</string>
 		<string>UIInterfaceOrientationLandscapeRight</string>
 	</array>
+	<key>NSCameraUsageDescription</key>
+	<string>Aly Player uses the camera to scan QR codes for importing playlists.</string>
+	<key>NSPhotoLibraryUsageDescription</key>
+	<string>Aly Player accesses your photo library to import playlist files.</string>
 	<key>CADisableMinimumFrameDurationOnPhone</key>
 	<true/>
 	<key>UIApplicationSupportsIndirectInputEvents</key>
