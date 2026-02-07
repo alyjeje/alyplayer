@@ -12,13 +12,16 @@ class AppLocalizationsEn extends AppLocalizations {
   String get appTitle => 'AlyPlayer';
 
   @override
+  String get home => 'Home';
+
+  @override
   String get liveTV => 'Live TV';
 
   @override
-  String get guide => 'Guide';
+  String get films => 'Films';
 
   @override
-  String get vod => 'VOD';
+  String get series => 'Series';
 
   @override
   String get favorites => 'Favorites';
@@ -42,13 +45,19 @@ class AppLocalizationsEn extends AppLocalizations {
   String get searchChannels => 'Search channels...';
 
   @override
-  String get searchVod => 'Search movies & series...';
+  String get searchFilms => 'Search films...';
+
+  @override
+  String get searchSeries => 'Search series...';
 
   @override
   String get noChannels => 'No channels yet';
 
   @override
-  String get noVodContent => 'No VOD content yet';
+  String get noFilms => 'No films yet';
+
+  @override
+  String get noSeries => 'No series yet';
 
   @override
   String get noFavorites => 'No favorites yet';
@@ -65,6 +74,60 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get addEpgSource => 'Add EPG Source';
+
+  @override
+  String get season => 'Season';
+
+  @override
+  String get episode => 'Episode';
+
+  @override
+  String get noEpisodes => 'No episodes found';
+
+  @override
+  String get trendingSeries => 'Trending Series';
+
+  @override
+  String get trendingFilms => 'Trending Films';
+
+  @override
+  String seasonEpisode(int season, int episode) {
+    return 'S${season}E$episode';
+  }
+
+  @override
+  String episodes(int count) {
+    return '$count episodes';
+  }
+
+  @override
+  String seasons(int count) {
+    return '$count seasons';
+  }
+
+  @override
+  String get serverUrl => 'Server URL';
+
+  @override
+  String get username => 'Username';
+
+  @override
+  String get password => 'Password';
+
+  @override
+  String get connect => 'Connect';
+
+  @override
+  String get directUrl => 'Direct URL';
+
+  @override
+  String get xtreamCodes => 'Xtream Codes';
+
+  @override
+  String get authFailed => 'Authentication failed';
+
+  @override
+  String get importMethod => 'Import Method';
 
   @override
   String get error => 'Error';

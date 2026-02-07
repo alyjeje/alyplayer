@@ -104,23 +104,29 @@ abstract class AppLocalizations {
   /// **'AlyPlayer'**
   String get appTitle;
 
+  /// No description provided for @home.
+  ///
+  /// In en, this message translates to:
+  /// **'Home'**
+  String get home;
+
   /// No description provided for @liveTV.
   ///
   /// In en, this message translates to:
   /// **'Live TV'**
   String get liveTV;
 
-  /// No description provided for @guide.
+  /// No description provided for @films.
   ///
   /// In en, this message translates to:
-  /// **'Guide'**
-  String get guide;
+  /// **'Films'**
+  String get films;
 
-  /// No description provided for @vod.
+  /// No description provided for @series.
   ///
   /// In en, this message translates to:
-  /// **'VOD'**
-  String get vod;
+  /// **'Series'**
+  String get series;
 
   /// No description provided for @favorites.
   ///
@@ -164,11 +170,17 @@ abstract class AppLocalizations {
   /// **'Search channels...'**
   String get searchChannels;
 
-  /// No description provided for @searchVod.
+  /// No description provided for @searchFilms.
   ///
   /// In en, this message translates to:
-  /// **'Search movies & series...'**
-  String get searchVod;
+  /// **'Search films...'**
+  String get searchFilms;
+
+  /// No description provided for @searchSeries.
+  ///
+  /// In en, this message translates to:
+  /// **'Search series...'**
+  String get searchSeries;
 
   /// No description provided for @noChannels.
   ///
@@ -176,11 +188,17 @@ abstract class AppLocalizations {
   /// **'No channels yet'**
   String get noChannels;
 
-  /// No description provided for @noVodContent.
+  /// No description provided for @noFilms.
   ///
   /// In en, this message translates to:
-  /// **'No VOD content yet'**
-  String get noVodContent;
+  /// **'No films yet'**
+  String get noFilms;
+
+  /// No description provided for @noSeries.
+  ///
+  /// In en, this message translates to:
+  /// **'No series yet'**
+  String get noSeries;
 
   /// No description provided for @noFavorites.
   ///
@@ -211,6 +229,102 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Add EPG Source'**
   String get addEpgSource;
+
+  /// No description provided for @season.
+  ///
+  /// In en, this message translates to:
+  /// **'Season'**
+  String get season;
+
+  /// No description provided for @episode.
+  ///
+  /// In en, this message translates to:
+  /// **'Episode'**
+  String get episode;
+
+  /// No description provided for @noEpisodes.
+  ///
+  /// In en, this message translates to:
+  /// **'No episodes found'**
+  String get noEpisodes;
+
+  /// No description provided for @trendingSeries.
+  ///
+  /// In en, this message translates to:
+  /// **'Trending Series'**
+  String get trendingSeries;
+
+  /// No description provided for @trendingFilms.
+  ///
+  /// In en, this message translates to:
+  /// **'Trending Films'**
+  String get trendingFilms;
+
+  /// No description provided for @seasonEpisode.
+  ///
+  /// In en, this message translates to:
+  /// **'S{season}E{episode}'**
+  String seasonEpisode(int season, int episode);
+
+  /// No description provided for @episodes.
+  ///
+  /// In en, this message translates to:
+  /// **'{count} episodes'**
+  String episodes(int count);
+
+  /// No description provided for @seasons.
+  ///
+  /// In en, this message translates to:
+  /// **'{count} seasons'**
+  String seasons(int count);
+
+  /// No description provided for @serverUrl.
+  ///
+  /// In en, this message translates to:
+  /// **'Server URL'**
+  String get serverUrl;
+
+  /// No description provided for @username.
+  ///
+  /// In en, this message translates to:
+  /// **'Username'**
+  String get username;
+
+  /// No description provided for @password.
+  ///
+  /// In en, this message translates to:
+  /// **'Password'**
+  String get password;
+
+  /// No description provided for @connect.
+  ///
+  /// In en, this message translates to:
+  /// **'Connect'**
+  String get connect;
+
+  /// No description provided for @directUrl.
+  ///
+  /// In en, this message translates to:
+  /// **'Direct URL'**
+  String get directUrl;
+
+  /// No description provided for @xtreamCodes.
+  ///
+  /// In en, this message translates to:
+  /// **'Xtream Codes'**
+  String get xtreamCodes;
+
+  /// No description provided for @authFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Authentication failed'**
+  String get authFailed;
+
+  /// No description provided for @importMethod.
+  ///
+  /// In en, this message translates to:
+  /// **'Import Method'**
+  String get importMethod;
 
   /// No description provided for @error.
   ///

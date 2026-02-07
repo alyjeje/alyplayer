@@ -1,11 +1,4 @@
 /// Riverpod providers for the AlyPlayer application.
-///
-/// This file centralises all top-level providers so that features and screens
-/// can depend on a single, well-documented import for their data needs.
-///
-/// Provider naming convention:
-/// - Singleton services: `<name>Provider`       (e.g. `databaseProvider`)
-/// - Reactive streams:   `<name>Provider`       (e.g. `liveChannelsProvider`)
 library;
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -15,13 +8,11 @@ import 'package:aly_player/core/services/player_service.dart';
 import 'package:aly_player/core/services/playlist_service.dart';
 import 'package:aly_player/core/services/epg_service.dart';
 import 'package:aly_player/core/services/subscription_service.dart';
+import 'package:aly_player/core/services/xtream_service.dart';
 
 // ─── Singleton Services ──────────────────────────────────────
 
 /// Global [AppDatabase] instance.
-///
-/// The database is created once and shared across the entire app. Drift
-/// handles connection pooling and background isolate execution internally.
 final databaseProvider = Provider<AppDatabase>((ref) {
   final db = AppDatabase();
   ref.onDispose(() => db.close());
@@ -32,6 +23,14 @@ final databaseProvider = Provider<AppDatabase>((ref) {
 final playlistServiceProvider = Provider<PlaylistService>((ref) {
   final db = ref.watch(databaseProvider);
   final service = PlaylistService(database: db);
+  ref.onDispose(() => service.dispose());
+  return service;
+});
+
+/// [XtreamService] for Xtream Codes API imports.
+final xtreamServiceProvider = Provider<XtreamService>((ref) {
+  final db = ref.watch(databaseProvider);
+  final service = XtreamService(database: db);
   ref.onDispose(() => service.dispose());
   return service;
 });
@@ -61,16 +60,16 @@ final subscriptionServiceProvider = Provider<SubscriptionService>((ref) {
 
 // ─── Reactive Data Streams ───────────────────────────────────
 
-/// Stream of all live (non-VOD) channels, sorted by sort order.
+/// Stream of all live channels, sorted by sort order.
 final liveChannelsProvider = StreamProvider<List<Channel>>((ref) {
   final db = ref.watch(databaseProvider);
   return db.watchLiveChannels();
 });
 
-/// Stream of all VOD channels, sorted by name.
-final vodChannelsProvider = StreamProvider<List<Channel>>((ref) {
+/// Stream of all movie (film) channels, sorted by name.
+final movieChannelsProvider = StreamProvider<List<Channel>>((ref) {
   final db = ref.watch(databaseProvider);
-  return db.watchVodChannels();
+  return db.watchMovieChannels();
 });
 
 /// Stream of all favourite channels, sorted by name.
@@ -95,4 +94,34 @@ final epgSourcesProvider = StreamProvider<List<EpgSource>>((ref) {
 final collectionsProvider = StreamProvider<List<Collection>>((ref) {
   final db = ref.watch(databaseProvider);
   return db.watchCollections();
+});
+
+/// Stream of all series entries, sorted by name.
+final allSeriesProvider = StreamProvider<List<SeriesEntry>>((ref) {
+  final db = ref.watch(databaseProvider);
+  return db.watchAllSeries();
+});
+
+/// Stream of episodes for a specific series, sorted by season then episode.
+final seriesEpisodesProvider = StreamProvider.family<List<Channel>, int>((ref, seriesId) {
+  final db = ref.watch(databaseProvider);
+  return db.watchEpisodesForSeries(seriesId);
+});
+
+/// Stream of channels the user is currently watching (watch progress 0-95%).
+final continueWatchingProvider = StreamProvider<List<Channel>>((ref) {
+  final db = ref.watch(databaseProvider);
+  return db.watchContinueWatching();
+});
+
+/// Stream of trending (recently added) movies.
+final trendingMoviesProvider = StreamProvider<List<Channel>>((ref) {
+  final db = ref.watch(databaseProvider);
+  return db.watchTrendingMovies();
+});
+
+/// Stream of trending (recently added) series.
+final trendingSeriesProvider = StreamProvider<List<SeriesEntry>>((ref) {
+  final db = ref.watch(databaseProvider);
+  return db.watchTrendingSeries();
 });

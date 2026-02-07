@@ -98,7 +98,7 @@ class _GuideScreenState extends ConsumerState<GuideScreen> {
 
     return Scaffold(
       appBar: AppBar(
-        title: Text(l10n.guide),
+        title: Text(l10n.epg),
         actions: [
           if (_isRefreshing)
             const Padding(

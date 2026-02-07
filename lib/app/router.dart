@@ -3,9 +3,11 @@ import 'package:go_router/go_router.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../features/onboarding/onboarding_screen.dart';
+import '../features/home/home_screen.dart';
 import '../features/live/live_screen.dart';
-import '../features/guide/guide_screen.dart';
-import '../features/vod/vod_screen.dart';
+import '../features/series/series_screen.dart';
+import '../features/series/series_detail_screen.dart';
+import '../features/films/films_screen.dart';
 import '../features/favorites/favorites_screen.dart';
 import '../features/settings/settings_screen.dart';
 import '../features/player/player_screen.dart';
@@ -15,13 +17,13 @@ import 'shell_screen.dart';
 
 final routerProvider = Provider<GoRouter>((ref) {
   return GoRouter(
-    initialLocation: '/live',
+    initialLocation: '/home',
     redirect: (context, state) async {
       final prefs = await SharedPreferences.getInstance();
       final onboarded = prefs.getBool('onboarding_complete') ?? false;
       final isOnboarding = state.matchedLocation == '/onboarding';
       if (!onboarded && !isOnboarding) return '/onboarding';
-      if (onboarded && isOnboarding) return '/live';
+      if (onboarded && isOnboarding) return '/home';
       return null;
     },
     routes: [
@@ -36,20 +38,26 @@ final routerProvider = Provider<GoRouter>((ref) {
         branches: [
           StatefulShellBranch(routes: [
             GoRoute(
+              path: '/home',
+              builder: (context, state) => const HomeScreen(),
+            ),
+          ]),
+          StatefulShellBranch(routes: [
+            GoRoute(
               path: '/live',
               builder: (context, state) => const LiveScreen(),
             ),
           ]),
           StatefulShellBranch(routes: [
             GoRoute(
-              path: '/guide',
-              builder: (context, state) => const GuideScreen(),
+              path: '/series',
+              builder: (context, state) => const SeriesScreen(),
             ),
           ]),
           StatefulShellBranch(routes: [
             GoRoute(
-              path: '/vod',
-              builder: (context, state) => const VodScreen(),
+              path: '/films',
+              builder: (context, state) => const FilmsScreen(),
             ),
           ]),
           StatefulShellBranch(routes: [
@@ -58,13 +66,11 @@ final routerProvider = Provider<GoRouter>((ref) {
               builder: (context, state) => const FavoritesScreen(),
             ),
           ]),
-          StatefulShellBranch(routes: [
-            GoRoute(
-              path: '/settings',
-              builder: (context, state) => const SettingsScreen(),
-            ),
-          ]),
         ],
+      ),
+      GoRoute(
+        path: '/settings',
+        builder: (context, state) => const SettingsScreen(),
       ),
       GoRoute(
         path: '/import',
@@ -80,6 +86,13 @@ final routerProvider = Provider<GoRouter>((ref) {
       GoRoute(
         path: '/paywall',
         builder: (context, state) => const PaywallScreen(),
+      ),
+      GoRoute(
+        path: '/series/:seriesId',
+        builder: (context, state) {
+          final seriesId = int.parse(state.pathParameters['seriesId']!);
+          return SeriesDetailScreen(seriesId: seriesId);
+        },
       ),
     ],
   );

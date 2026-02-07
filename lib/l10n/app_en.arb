@@ -1,9 +1,10 @@
 {
   "@@locale": "en",
   "appTitle": "AlyPlayer",
+  "home": "Home",
   "liveTV": "Live TV",
-  "guide": "Guide",
-  "vod": "VOD",
+  "films": "Films",
+  "series": "Series",
   "favorites": "Favorites",
   "settings": "Settings",
   "channels": "Channels",
@@ -11,14 +12,48 @@
   "all": "All",
   "search": "Search",
   "searchChannels": "Search channels...",
-  "searchVod": "Search movies & series...",
+  "searchFilms": "Search films...",
+  "searchSeries": "Search series...",
   "noChannels": "No channels yet",
-  "noVodContent": "No VOD content yet",
+  "noFilms": "No films yet",
+  "noSeries": "No series yet",
   "noFavorites": "No favorites yet",
   "noFavoritesHint": "Tap the heart icon on any channel to add it here",
   "noCollections": "No collections yet",
   "noEpgSources": "No EPG sources configured",
   "addEpgSource": "Add EPG Source",
+  "season": "Season",
+  "episode": "Episode",
+  "noEpisodes": "No episodes found",
+  "trendingSeries": "Trending Series",
+  "trendingFilms": "Trending Films",
+  "seasonEpisode": "S{season}E{episode}",
+  "@seasonEpisode": {
+    "placeholders": {
+      "season": {"type": "int"},
+      "episode": {"type": "int"}
+    }
+  },
+  "episodes": "{count} episodes",
+  "@episodes": {
+    "placeholders": {
+      "count": {"type": "int"}
+    }
+  },
+  "seasons": "{count} seasons",
+  "@seasons": {
+    "placeholders": {
+      "count": {"type": "int"}
+    }
+  },
+  "serverUrl": "Server URL",
+  "username": "Username",
+  "password": "Password",
+  "connect": "Connect",
+  "directUrl": "Direct URL",
+  "xtreamCodes": "Xtream Codes",
+  "authFailed": "Authentication failed",
+  "importMethod": "Import Method",
   "error": "Error",
   "retry": "Retry",
   "cancel": "Cancel",

@@ -6,44 +6,52 @@ import 'package:cached_network_image/cached_network_image.dart';
 
 import '../../core/providers/providers.dart';
 
-class VodScreen extends ConsumerStatefulWidget {
-  const VodScreen({super.key});
+class FilmsScreen extends ConsumerStatefulWidget {
+  const FilmsScreen({super.key});
 
   @override
-  ConsumerState<VodScreen> createState() => _VodScreenState();
+  ConsumerState<FilmsScreen> createState() => _FilmsScreenState();
 }
 
-class _VodScreenState extends ConsumerState<VodScreen> {
+class _FilmsScreenState extends ConsumerState<FilmsScreen> {
   String _searchQuery = '';
   String? _selectedGroup;
 
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
-    final vodAsync = ref.watch(vodChannelsProvider);
+    final moviesAsync = ref.watch(movieChannelsProvider);
 
     return Scaffold(
-      appBar: AppBar(title: Text(l10n.vod)),
+      appBar: AppBar(
+        title: Text(l10n.films),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.settings),
+            onPressed: () => context.push('/settings'),
+          ),
+        ],
+      ),
       body: Column(
         children: [
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
             child: SearchBar(
-              hintText: l10n.searchVod,
+              hintText: l10n.searchFilms,
               leading: const Icon(Icons.search),
               onChanged: (v) => setState(() => _searchQuery = v),
             ),
           ),
-          vodAsync.when(
-            data: (items) {
-              final groups = items
+          moviesAsync.when(
+            data: (movies) {
+              final groups = movies
                   .map((c) => c.groupTitle)
                   .where((g) => g != null)
                   .toSet()
                   .toList()
                 ..sort();
 
-              final filtered = items.where((c) {
+              final filtered = movies.where((c) {
                 final matchSearch = _searchQuery.isEmpty ||
                     c.name.toLowerCase().contains(_searchQuery.toLowerCase());
                 final matchGroup =
@@ -62,7 +70,8 @@ class _VodScreenState extends ConsumerState<VodScreen> {
                           padding: const EdgeInsets.symmetric(horizontal: 12),
                           children: [
                             Padding(
-                              padding: const EdgeInsets.symmetric(horizontal: 4),
+                              padding:
+                                  const EdgeInsets.symmetric(horizontal: 4),
                               child: FilterChip(
                                 label: Text(l10n.all),
                                 selected: _selectedGroup == null,
@@ -92,61 +101,71 @@ class _VodScreenState extends ConsumerState<VodScreen> {
                                 children: [
                                   Icon(Icons.movie_outlined,
                                       size: 64,
-                                      color: Theme.of(context)
-                                          .colorScheme
-                                          .outline),
+                                      color:
+                                          Theme.of(context).colorScheme.outline),
                                   const SizedBox(height: 16),
-                                  Text(l10n.noVodContent),
+                                  Text(l10n.noFilms),
                                 ],
                               ),
                             )
                           : GridView.builder(
-                              padding: const EdgeInsets.all(12),
+                              padding: const EdgeInsets.all(16),
                               gridDelegate:
                                   const SliverGridDelegateWithFixedCrossAxisCount(
                                 crossAxisCount: 3,
-                                childAspectRatio: 0.65,
-                                crossAxisSpacing: 8,
-                                mainAxisSpacing: 8,
+                                childAspectRatio: 0.6,
+                                crossAxisSpacing: 12,
+                                mainAxisSpacing: 12,
                               ),
                               itemCount: filtered.length,
                               itemBuilder: (context, i) {
-                                final item = filtered[i];
+                                final movie = filtered[i];
                                 return GestureDetector(
                                   onTap: () => context.push('/player',
-                                      extra: item.id),
-                                  child: Card(
-                                    clipBehavior: Clip.antiAlias,
-                                    child: Column(
-                                      crossAxisAlignment:
-                                          CrossAxisAlignment.stretch,
-                                      children: [
-                                        Expanded(
-                                          child: item.logoUrl != null
+                                      extra: movie.id),
+                                  child: Column(
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.stretch,
+                                    children: [
+                                      Expanded(
+                                        child: ClipRRect(
+                                          borderRadius:
+                                              BorderRadius.circular(8),
+                                          child: movie.logoUrl != null
                                               ? CachedNetworkImage(
-                                                  imageUrl: item.logoUrl!,
+                                                  imageUrl: movie.logoUrl!,
                                                   fit: BoxFit.cover,
-                                                  errorWidget: (_, __, ___) =>
-                                                      const Center(
-                                                          child: Icon(
-                                                              Icons.movie,
-                                                              size: 40)),
+                                                  errorWidget:
+                                                      (_, __, ___) =>
+                                                          Container(
+                                                    color: Theme.of(context)
+                                                        .colorScheme
+                                                        .surfaceContainerHighest,
+                                                    child: const Icon(
+                                                        Icons.movie,
+                                                        size: 40),
+                                                  ),
                                                 )
-                                              : const Center(
-                                                  child: Icon(Icons.movie,
-                                                      size: 40)),
+                                              : Container(
+                                                  color: Theme.of(context)
+                                                      .colorScheme
+                                                      .surfaceContainerHighest,
+                                                  child: const Icon(
+                                                      Icons.movie,
+                                                      size: 40),
+                                                ),
                                         ),
-                                        Padding(
-                                          padding: const EdgeInsets.all(6),
-                                          child: Text(item.name,
-                                              maxLines: 2,
-                                              overflow: TextOverflow.ellipsis,
-                                              style: Theme.of(context)
-                                                  .textTheme
-                                                  .bodySmall),
-                                        ),
-                                      ],
-                                    ),
+                                      ),
+                                      const SizedBox(height: 4),
+                                      Text(
+                                        movie.name,
+                                        maxLines: 2,
+                                        overflow: TextOverflow.ellipsis,
+                                        style: Theme.of(context)
+                                            .textTheme
+                                            .bodySmall,
+                                      ),
+                                    ],
                                   ),
                                 );
                               },
@@ -158,8 +177,8 @@ class _VodScreenState extends ConsumerState<VodScreen> {
             },
             loading: () => const Expanded(
                 child: Center(child: CircularProgressIndicator())),
-            error: (e, _) => Expanded(
-                child: Center(child: Text('${l10n.error}: $e'))),
+            error: (e, _) =>
+                Expanded(child: Center(child: Text('${l10n.error}: $e'))),
           ),
         ],
       ),

@@ -13,7 +13,9 @@ enum PlaylistImportSource {
   url('url'),
   file('file'),
   clipboard('clipboard'),
-  qrCode('qr_code');
+  qrCode('qr_code'),
+  xtream('xtream'),
+  directUrl('direct_url');
 
   const PlaylistImportSource(this.value);
 
@@ -27,6 +29,22 @@ enum PlaylistImportSource {
       orElse: () => PlaylistImportSource.url,
     );
   }
+}
+
+/// Content classification for channels.
+enum ContentType {
+  live('live'),
+  movie('movie'),
+  series('series');
+
+  const ContentType(this.value);
+  final String value;
+
+  static ContentType fromValue(String raw) =>
+      ContentType.values.firstWhere(
+        (e) => e.value == raw,
+        orElse: () => ContentType.live,
+      );
 }
 
 /// Discrete states the video player can be in.
@@ -69,7 +87,10 @@ class ChannelDTO {
     this.tvgId,
     this.tvgName,
     this.tvgLogo,
-    this.isVod = false,
+    this.contentType = ContentType.live,
+    this.seriesName,
+    this.seasonNumber,
+    this.episodeNumber,
     this.extras = const {},
   });
 
@@ -91,17 +112,29 @@ class ChannelDTO {
   /// URL to the channel logo / thumbnail image.
   final String? tvgLogo;
 
-  /// Whether this entry is a Video-On-Demand item rather than a live stream.
-  final bool isVod;
+  /// Content classification for this entry.
+  final ContentType contentType;
+
+  /// Series name when this entry is a series episode.
+  final String? seriesName;
+
+  /// Season number when this entry is a series episode.
+  final int? seasonNumber;
+
+  /// Episode number when this entry is a series episode.
+  final int? episodeNumber;
 
   /// Catch-all map for any additional parsed attributes not covered above
   /// (e.g. `tvg-shift`, `tvg-language`, `radio`, custom VLCOPT values).
   final Map<String, String> extras;
 
+  /// Legacy getter for backward compatibility with tests.
+  bool get isVod => contentType != ContentType.live;
+
   @override
   String toString() =>
       'ChannelDTO(name: $name, url: $streamUrl, group: $groupTitle, '
-      'vod: $isVod)';
+      'type: ${contentType.value})';
 
   @override
   bool operator ==(Object other) =>
@@ -137,13 +170,21 @@ class PlaylistDTO {
 
   // ── Convenience getters ──
 
-  /// Only live (non-VOD) channels.
+  /// Only live channels.
   List<ChannelDTO> get liveChannels =>
-      channels.where((c) => !c.isVod).toList(growable: false);
+      channels.where((c) => c.contentType == ContentType.live).toList(growable: false);
 
-  /// Only Video-On-Demand entries.
+  /// Only movie (film) entries.
+  List<ChannelDTO> get movieChannels =>
+      channels.where((c) => c.contentType == ContentType.movie).toList(growable: false);
+
+  /// Only series episode entries.
+  List<ChannelDTO> get seriesChannels =>
+      channels.where((c) => c.contentType == ContentType.series).toList(growable: false);
+
+  /// Legacy getter.
   List<ChannelDTO> get vodChannels =>
-      channels.where((c) => c.isVod).toList(growable: false);
+      channels.where((c) => c.contentType != ContentType.live).toList(growable: false);
 
   /// Distinct, sorted set of group titles (categories) present in this
   /// playlist. Channels without a group are excluded.
@@ -261,4 +302,72 @@ class EPGParseResult {
   String toString() =>
       'EPGParseResult(channels: ${channels.length}, '
       'programs: ${programs.length})';
+}
+
+// ─── Xtream DTOs ──────────────────────────────────────────
+
+/// Credentials for connecting to an Xtream Codes API server.
+class XtreamCredentials {
+  const XtreamCredentials({
+    required this.server,
+    required this.username,
+    required this.password,
+  });
+
+  final String server;
+  final String username;
+  final String password;
+
+  /// Base API URL.
+  String get apiUrl => '$_baseUrl/player_api.php';
+
+  /// Build a live stream URL.
+  String liveStreamUrl(String streamId) => '$_baseUrl/$username/$password/$streamId';
+
+  /// Build a VOD stream URL.
+  String vodStreamUrl(String streamId, String ext) =>
+      '$_baseUrl/movie/$username/$password/$streamId.$ext';
+
+  /// Build a series episode stream URL.
+  String seriesStreamUrl(String episodeId, String ext) =>
+      '$_baseUrl/series/$username/$password/$episodeId.$ext';
+
+  String get _baseUrl => server.replaceAll(RegExp(r'/+$'), '');
+}
+
+/// A series with its season/episode structure from Xtream API.
+class XtreamSeriesInfoDTO {
+  const XtreamSeriesInfoDTO({
+    required this.name,
+    this.cover,
+    this.plot,
+    this.genre,
+    required this.seasons,
+  });
+
+  final String name;
+  final String? cover;
+  final String? plot;
+  final String? genre;
+  /// Map of season number to list of episodes.
+  final Map<int, List<XtreamEpisodeDTO>> seasons;
+}
+
+/// A single episode from Xtream API.
+class XtreamEpisodeDTO {
+  const XtreamEpisodeDTO({
+    required this.id,
+    required this.title,
+    required this.containerExtension,
+    required this.episodeNumber,
+    required this.seasonNumber,
+    this.coverUrl,
+  });
+
+  final String id;
+  final String title;
+  final String containerExtension;
+  final int episodeNumber;
+  final int seasonNumber;
+  final String? coverUrl;
 }

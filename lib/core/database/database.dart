@@ -22,6 +22,10 @@ class Playlists extends Table {
   TextColumn get colorTag => text().nullable()();
   IntColumn get sortOrder => integer().withDefault(const Constant(0))();
   IntColumn get channelCount => integer().withDefault(const Constant(0))();
+  TextColumn get playlistType => text().withDefault(const Constant('m3u'))(); // 'm3u', 'xtream', 'direct'
+  TextColumn get xtreamServer => text().nullable()();
+  TextColumn get xtreamUsername => text().nullable()();
+  TextColumn get xtreamPassword => text().nullable()();
 }
 
 class Channels extends Table {
@@ -33,7 +37,10 @@ class Channels extends Table {
   TextColumn get groupTitle => text().nullable()();
   TextColumn get tvgId => text().nullable()();
   TextColumn get tvgName => text().nullable()();
-  BoolColumn get isVod => boolean().withDefault(const Constant(false))();
+  TextColumn get contentType => text().withDefault(const Constant('live'))(); // 'live', 'movie', 'series'
+  IntColumn get seriesId => integer().nullable().references(SeriesEntries, #id)();
+  IntColumn get seasonNumber => integer().nullable()();
+  IntColumn get episodeNumber => integer().nullable()();
   BoolColumn get isFavorite => boolean().withDefault(const Constant(false))();
   DateTimeColumn get lastWatched => dateTime().nullable()();
   RealColumn get watchProgress => real().withDefault(const Constant(0.0))();
@@ -79,6 +86,18 @@ class CollectionChannels extends Table {
   Set<Column> get primaryKey => {collectionId, channelId};
 }
 
+class SeriesEntries extends Table {
+  IntColumn get id => integer().autoIncrement()();
+  TextColumn get uuid => text().unique()();
+  TextColumn get name => text()();
+  TextColumn get coverUrl => text().nullable()();
+  TextColumn get genre => text().nullable()();
+  TextColumn get plot => text().nullable()();
+  IntColumn get playlistId => integer().references(Playlists, #id)();
+  DateTimeColumn get dateAdded => dateTime().withDefault(currentDateAndTime)();
+  IntColumn get sortOrder => integer().withDefault(const Constant(0))();
+}
+
 // ─── Database ─────────────────────────────────────────────
 
 @DriftDatabase(tables: [
@@ -88,6 +107,7 @@ class CollectionChannels extends Table {
   EpgPrograms,
   Collections,
   CollectionChannels,
+  SeriesEntries,
 ])
 class AppDatabase extends _$AppDatabase {
   AppDatabase() : super(_openConnection());
@@ -96,7 +116,28 @@ class AppDatabase extends _$AppDatabase {
   AppDatabase.forTesting(super.e);
 
   @override
-  int get schemaVersion => 1;
+  int get schemaVersion => 2;
+
+  @override
+  MigrationStrategy get migration => MigrationStrategy(
+    onCreate: (m) => m.createAll(),
+    onUpgrade: (m, from, to) async {
+      if (from < 2) {
+        await m.createTable(seriesEntries);
+        await m.addColumn(channels, channels.contentType);
+        await m.addColumn(channels, channels.seriesId);
+        await m.addColumn(channels, channels.seasonNumber);
+        await m.addColumn(channels, channels.episodeNumber);
+        await m.addColumn(playlists, playlists.playlistType);
+        await m.addColumn(playlists, playlists.xtreamServer);
+        await m.addColumn(playlists, playlists.xtreamUsername);
+        await m.addColumn(playlists, playlists.xtreamPassword);
+        // Migrate existing data
+        await customStatement("UPDATE channels SET content_type = 'movie' WHERE is_vod = 1");
+        await customStatement("UPDATE channels SET content_type = 'live' WHERE is_vod = 0");
+      }
+    },
+  );
 
   // ─── Playlist Queries ───
 
@@ -110,7 +151,11 @@ class AppDatabase extends _$AppDatabase {
       into(playlists).insertReturning(entry);
 
   Future<void> deletePlaylistById(int id) async {
+    // Delete channels first (they may reference series)
     await (delete(channels)..where((t) => t.playlistId.equals(id))).go();
+    // Delete series for this playlist
+    await (delete(seriesEntries)..where((t) => t.playlistId.equals(id))).go();
+    // Delete the playlist itself
     await (delete(playlists)..where((t) => t.id.equals(id))).go();
   }
 
@@ -121,13 +166,13 @@ class AppDatabase extends _$AppDatabase {
 
   Stream<List<Channel>> watchLiveChannels() =>
       (select(channels)
-            ..where((t) => t.isVod.equals(false))
+            ..where((t) => t.contentType.equals('live'))
             ..orderBy([(t) => OrderingTerm.asc(t.sortOrder)]))
           .watch();
 
-  Stream<List<Channel>> watchVodChannels() =>
+  Stream<List<Channel>> watchMovieChannels() =>
       (select(channels)
-            ..where((t) => t.isVod.equals(true))
+            ..where((t) => t.contentType.equals('movie'))
             ..orderBy([(t) => OrderingTerm.asc(t.name)]))
           .watch();
 
@@ -156,6 +201,58 @@ class AppDatabase extends _$AppDatabase {
 
   Future<void> deleteChannelsForPlaylist(int playlistId) =>
       (delete(channels)..where((t) => t.playlistId.equals(playlistId))).go();
+
+  // ─── Series Queries ───
+
+  Stream<List<SeriesEntry>> watchAllSeries() =>
+      (select(seriesEntries)..orderBy([(t) => OrderingTerm.asc(t.name)])).watch();
+
+  Future<SeriesEntry?> getSeriesById(int id) =>
+      (select(seriesEntries)..where((t) => t.id.equals(id))).getSingleOrNull();
+
+  Stream<List<Channel>> watchEpisodesForSeries(int seriesId) =>
+      (select(channels)
+        ..where((t) => t.seriesId.equals(seriesId))
+        ..orderBy([
+          (t) => OrderingTerm.asc(t.seasonNumber),
+          (t) => OrderingTerm.asc(t.episodeNumber),
+        ]))
+      .watch();
+
+  Future<SeriesEntry> insertSeries(SeriesEntriesCompanion entry) =>
+      into(seriesEntries).insertReturning(entry);
+
+  Future<void> insertSeriesBatch(List<SeriesEntriesCompanion> entries) async {
+    await batch((b) => b.insertAll(seriesEntries, entries));
+  }
+
+  Future<void> deleteSeriesForPlaylist(int playlistId) =>
+      (delete(seriesEntries)..where((t) => t.playlistId.equals(playlistId))).go();
+
+  // ─── Home Screen Queries ───
+
+  Stream<List<Channel>> watchContinueWatching() =>
+      (select(channels)
+        ..where((t) =>
+            t.contentType.isIn(['movie', 'series']) &
+            t.watchProgress.isBiggerThanValue(0.0) &
+            t.watchProgress.isSmallerThanValue(0.95))
+        ..orderBy([(t) => OrderingTerm.desc(t.lastWatched)])
+        ..limit(20))
+      .watch();
+
+  Stream<List<Channel>> watchTrendingMovies() =>
+      (select(channels)
+        ..where((t) => t.contentType.equals('movie'))
+        ..orderBy([(t) => OrderingTerm.desc(t.id)])
+        ..limit(20))
+      .watch();
+
+  Stream<List<SeriesEntry>> watchTrendingSeries() =>
+      (select(seriesEntries)
+        ..orderBy([(t) => OrderingTerm.desc(t.dateAdded)])
+        ..limit(20))
+      .watch();
 
   // ─── EPG Queries ───
 

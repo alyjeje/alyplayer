@@ -19,11 +19,11 @@ class ShellScreen extends StatelessWidget {
           navigationShell.goBranch(index, initialLocation: index == navigationShell.currentIndex);
         },
         destinations: [
-          NavigationDestination(icon: const Icon(Icons.live_tv), label: l10n.liveTV),
-          NavigationDestination(icon: const Icon(Icons.calendar_month), label: l10n.guide),
-          NavigationDestination(icon: const Icon(Icons.movie_outlined), label: l10n.vod),
-          NavigationDestination(icon: const Icon(Icons.star), label: l10n.favorites),
-          NavigationDestination(icon: const Icon(Icons.settings), label: l10n.settings),
+          NavigationDestination(icon: const Icon(Icons.home_outlined), selectedIcon: const Icon(Icons.home), label: l10n.home),
+          NavigationDestination(icon: const Icon(Icons.live_tv_outlined), selectedIcon: const Icon(Icons.live_tv), label: l10n.liveTV),
+          NavigationDestination(icon: const Icon(Icons.tv_outlined), selectedIcon: const Icon(Icons.tv), label: l10n.series),
+          NavigationDestination(icon: const Icon(Icons.movie_outlined), selectedIcon: const Icon(Icons.movie), label: l10n.films),
+          NavigationDestination(icon: const Icon(Icons.favorite_outline), selectedIcon: const Icon(Icons.favorite), label: l10n.favorites),
         ],
       ),
     );

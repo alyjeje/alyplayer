@@ -145,6 +145,51 @@ class $PlaylistsTable extends Playlists
     requiredDuringInsert: false,
     defaultValue: const Constant(0),
   );
+  static const VerificationMeta _playlistTypeMeta = const VerificationMeta(
+    'playlistType',
+  );
+  @override
+  late final GeneratedColumn<String> playlistType = GeneratedColumn<String>(
+    'playlist_type',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+    defaultValue: const Constant('m3u'),
+  );
+  static const VerificationMeta _xtreamServerMeta = const VerificationMeta(
+    'xtreamServer',
+  );
+  @override
+  late final GeneratedColumn<String> xtreamServer = GeneratedColumn<String>(
+    'xtream_server',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _xtreamUsernameMeta = const VerificationMeta(
+    'xtreamUsername',
+  );
+  @override
+  late final GeneratedColumn<String> xtreamUsername = GeneratedColumn<String>(
+    'xtream_username',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _xtreamPasswordMeta = const VerificationMeta(
+    'xtreamPassword',
+  );
+  @override
+  late final GeneratedColumn<String> xtreamPassword = GeneratedColumn<String>(
+    'xtream_password',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
   @override
   List<GeneratedColumn> get $columns => [
     id,
@@ -159,6 +204,10 @@ class $PlaylistsTable extends Playlists
     colorTag,
     sortOrder,
     channelCount,
+    playlistType,
+    xtreamServer,
+    xtreamUsername,
+    xtreamPassword,
   ];
   @override
   String get aliasedName => _alias ?? actualTableName;
@@ -257,6 +306,42 @@ class $PlaylistsTable extends Playlists
         ),
       );
     }
+    if (data.containsKey('playlist_type')) {
+      context.handle(
+        _playlistTypeMeta,
+        playlistType.isAcceptableOrUnknown(
+          data['playlist_type']!,
+          _playlistTypeMeta,
+        ),
+      );
+    }
+    if (data.containsKey('xtream_server')) {
+      context.handle(
+        _xtreamServerMeta,
+        xtreamServer.isAcceptableOrUnknown(
+          data['xtream_server']!,
+          _xtreamServerMeta,
+        ),
+      );
+    }
+    if (data.containsKey('xtream_username')) {
+      context.handle(
+        _xtreamUsernameMeta,
+        xtreamUsername.isAcceptableOrUnknown(
+          data['xtream_username']!,
+          _xtreamUsernameMeta,
+        ),
+      );
+    }
+    if (data.containsKey('xtream_password')) {
+      context.handle(
+        _xtreamPasswordMeta,
+        xtreamPassword.isAcceptableOrUnknown(
+          data['xtream_password']!,
+          _xtreamPasswordMeta,
+        ),
+      );
+    }
     return context;
   }
 
@@ -314,6 +399,22 @@ class $PlaylistsTable extends Playlists
         DriftSqlType.int,
         data['${effectivePrefix}channel_count'],
       )!,
+      playlistType: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}playlist_type'],
+      )!,
+      xtreamServer: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}xtream_server'],
+      ),
+      xtreamUsername: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}xtream_username'],
+      ),
+      xtreamPassword: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}xtream_password'],
+      ),
     );
   }
 
@@ -336,6 +437,10 @@ class Playlist extends DataClass implements Insertable<Playlist> {
   final String? colorTag;
   final int sortOrder;
   final int channelCount;
+  final String playlistType;
+  final String? xtreamServer;
+  final String? xtreamUsername;
+  final String? xtreamPassword;
   const Playlist({
     required this.id,
     required this.uuid,
@@ -349,6 +454,10 @@ class Playlist extends DataClass implements Insertable<Playlist> {
     this.colorTag,
     required this.sortOrder,
     required this.channelCount,
+    required this.playlistType,
+    this.xtreamServer,
+    this.xtreamUsername,
+    this.xtreamPassword,
   });
   @override
   Map<String, Expression> toColumns(bool nullToAbsent) {
@@ -373,6 +482,16 @@ class Playlist extends DataClass implements Insertable<Playlist> {
     }
     map['sort_order'] = Variable<int>(sortOrder);
     map['channel_count'] = Variable<int>(channelCount);
+    map['playlist_type'] = Variable<String>(playlistType);
+    if (!nullToAbsent || xtreamServer != null) {
+      map['xtream_server'] = Variable<String>(xtreamServer);
+    }
+    if (!nullToAbsent || xtreamUsername != null) {
+      map['xtream_username'] = Variable<String>(xtreamUsername);
+    }
+    if (!nullToAbsent || xtreamPassword != null) {
+      map['xtream_password'] = Variable<String>(xtreamPassword);
+    }
     return map;
   }
 
@@ -396,6 +515,16 @@ class Playlist extends DataClass implements Insertable<Playlist> {
           : Value(colorTag),
       sortOrder: Value(sortOrder),
       channelCount: Value(channelCount),
+      playlistType: Value(playlistType),
+      xtreamServer: xtreamServer == null && nullToAbsent
+          ? const Value.absent()
+          : Value(xtreamServer),
+      xtreamUsername: xtreamUsername == null && nullToAbsent
+          ? const Value.absent()
+          : Value(xtreamUsername),
+      xtreamPassword: xtreamPassword == null && nullToAbsent
+          ? const Value.absent()
+          : Value(xtreamPassword),
     );
   }
 
@@ -419,6 +548,10 @@ class Playlist extends DataClass implements Insertable<Playlist> {
       colorTag: serializer.fromJson<String?>(json['colorTag']),
       sortOrder: serializer.fromJson<int>(json['sortOrder']),
       channelCount: serializer.fromJson<int>(json['channelCount']),
+      playlistType: serializer.fromJson<String>(json['playlistType']),
+      xtreamServer: serializer.fromJson<String?>(json['xtreamServer']),
+      xtreamUsername: serializer.fromJson<String?>(json['xtreamUsername']),
+      xtreamPassword: serializer.fromJson<String?>(json['xtreamPassword']),
     );
   }
   @override
@@ -437,6 +570,10 @@ class Playlist extends DataClass implements Insertable<Playlist> {
       'colorTag': serializer.toJson<String?>(colorTag),
       'sortOrder': serializer.toJson<int>(sortOrder),
       'channelCount': serializer.toJson<int>(channelCount),
+      'playlistType': serializer.toJson<String>(playlistType),
+      'xtreamServer': serializer.toJson<String?>(xtreamServer),
+      'xtreamUsername': serializer.toJson<String?>(xtreamUsername),
+      'xtreamPassword': serializer.toJson<String?>(xtreamPassword),
     };
   }
 
@@ -453,6 +590,10 @@ class Playlist extends DataClass implements Insertable<Playlist> {
     Value<String?> colorTag = const Value.absent(),
     int? sortOrder,
     int? channelCount,
+    String? playlistType,
+    Value<String?> xtreamServer = const Value.absent(),
+    Value<String?> xtreamUsername = const Value.absent(),
+    Value<String?> xtreamPassword = const Value.absent(),
   }) => Playlist(
     id: id ?? this.id,
     uuid: uuid ?? this.uuid,
@@ -466,6 +607,14 @@ class Playlist extends DataClass implements Insertable<Playlist> {
     colorTag: colorTag.present ? colorTag.value : this.colorTag,
     sortOrder: sortOrder ?? this.sortOrder,
     channelCount: channelCount ?? this.channelCount,
+    playlistType: playlistType ?? this.playlistType,
+    xtreamServer: xtreamServer.present ? xtreamServer.value : this.xtreamServer,
+    xtreamUsername: xtreamUsername.present
+        ? xtreamUsername.value
+        : this.xtreamUsername,
+    xtreamPassword: xtreamPassword.present
+        ? xtreamPassword.value
+        : this.xtreamPassword,
   );
   Playlist copyWithCompanion(PlaylistsCompanion data) {
     return Playlist(
@@ -489,6 +638,18 @@ class Playlist extends DataClass implements Insertable<Playlist> {
       channelCount: data.channelCount.present
           ? data.channelCount.value
           : this.channelCount,
+      playlistType: data.playlistType.present
+          ? data.playlistType.value
+          : this.playlistType,
+      xtreamServer: data.xtreamServer.present
+          ? data.xtreamServer.value
+          : this.xtreamServer,
+      xtreamUsername: data.xtreamUsername.present
+          ? data.xtreamUsername.value
+          : this.xtreamUsername,
+      xtreamPassword: data.xtreamPassword.present
+          ? data.xtreamPassword.value
+          : this.xtreamPassword,
     );
   }
 
@@ -506,7 +667,11 @@ class Playlist extends DataClass implements Insertable<Playlist> {
           ..write('refreshIntervalHours: $refreshIntervalHours, ')
           ..write('colorTag: $colorTag, ')
           ..write('sortOrder: $sortOrder, ')
-          ..write('channelCount: $channelCount')
+          ..write('channelCount: $channelCount, ')
+          ..write('playlistType: $playlistType, ')
+          ..write('xtreamServer: $xtreamServer, ')
+          ..write('xtreamUsername: $xtreamUsername, ')
+          ..write('xtreamPassword: $xtreamPassword')
           ..write(')'))
         .toString();
   }
@@ -525,6 +690,10 @@ class Playlist extends DataClass implements Insertable<Playlist> {
     colorTag,
     sortOrder,
     channelCount,
+    playlistType,
+    xtreamServer,
+    xtreamUsername,
+    xtreamPassword,
   );
   @override
   bool operator ==(Object other) =>
@@ -541,7 +710,11 @@ class Playlist extends DataClass implements Insertable<Playlist> {
           other.refreshIntervalHours == this.refreshIntervalHours &&
           other.colorTag == this.colorTag &&
           other.sortOrder == this.sortOrder &&
-          other.channelCount == this.channelCount);
+          other.channelCount == this.channelCount &&
+          other.playlistType == this.playlistType &&
+          other.xtreamServer == this.xtreamServer &&
+          other.xtreamUsername == this.xtreamUsername &&
+          other.xtreamPassword == this.xtreamPassword);
 }
 
 class PlaylistsCompanion extends UpdateCompanion<Playlist> {
@@ -557,6 +730,10 @@ class PlaylistsCompanion extends UpdateCompanion<Playlist> {
   final Value<String?> colorTag;
   final Value<int> sortOrder;
   final Value<int> channelCount;
+  final Value<String> playlistType;
+  final Value<String?> xtreamServer;
+  final Value<String?> xtreamUsername;
+  final Value<String?> xtreamPassword;
   const PlaylistsCompanion({
     this.id = const Value.absent(),
     this.uuid = const Value.absent(),
@@ -570,6 +747,10 @@ class PlaylistsCompanion extends UpdateCompanion<Playlist> {
     this.colorTag = const Value.absent(),
     this.sortOrder = const Value.absent(),
     this.channelCount = const Value.absent(),
+    this.playlistType = const Value.absent(),
+    this.xtreamServer = const Value.absent(),
+    this.xtreamUsername = const Value.absent(),
+    this.xtreamPassword = const Value.absent(),
   });
   PlaylistsCompanion.insert({
     this.id = const Value.absent(),
@@ -584,6 +765,10 @@ class PlaylistsCompanion extends UpdateCompanion<Playlist> {
     this.colorTag = const Value.absent(),
     this.sortOrder = const Value.absent(),
     this.channelCount = const Value.absent(),
+    this.playlistType = const Value.absent(),
+    this.xtreamServer = const Value.absent(),
+    this.xtreamUsername = const Value.absent(),
+    this.xtreamPassword = const Value.absent(),
   }) : uuid = Value(uuid),
        name = Value(name);
   static Insertable<Playlist> custom({
@@ -599,6 +784,10 @@ class PlaylistsCompanion extends UpdateCompanion<Playlist> {
     Expression<String>? colorTag,
     Expression<int>? sortOrder,
     Expression<int>? channelCount,
+    Expression<String>? playlistType,
+    Expression<String>? xtreamServer,
+    Expression<String>? xtreamUsername,
+    Expression<String>? xtreamPassword,
   }) {
     return RawValuesInsertable({
       if (id != null) 'id': id,
@@ -614,6 +803,10 @@ class PlaylistsCompanion extends UpdateCompanion<Playlist> {
       if (colorTag != null) 'color_tag': colorTag,
       if (sortOrder != null) 'sort_order': sortOrder,
       if (channelCount != null) 'channel_count': channelCount,
+      if (playlistType != null) 'playlist_type': playlistType,
+      if (xtreamServer != null) 'xtream_server': xtreamServer,
+      if (xtreamUsername != null) 'xtream_username': xtreamUsername,
+      if (xtreamPassword != null) 'xtream_password': xtreamPassword,
     });
   }
 
@@ -630,6 +823,10 @@ class PlaylistsCompanion extends UpdateCompanion<Playlist> {
     Value<String?>? colorTag,
     Value<int>? sortOrder,
     Value<int>? channelCount,
+    Value<String>? playlistType,
+    Value<String?>? xtreamServer,
+    Value<String?>? xtreamUsername,
+    Value<String?>? xtreamPassword,
   }) {
     return PlaylistsCompanion(
       id: id ?? this.id,
@@ -644,6 +841,10 @@ class PlaylistsCompanion extends UpdateCompanion<Playlist> {
       colorTag: colorTag ?? this.colorTag,
       sortOrder: sortOrder ?? this.sortOrder,
       channelCount: channelCount ?? this.channelCount,
+      playlistType: playlistType ?? this.playlistType,
+      xtreamServer: xtreamServer ?? this.xtreamServer,
+      xtreamUsername: xtreamUsername ?? this.xtreamUsername,
+      xtreamPassword: xtreamPassword ?? this.xtreamPassword,
     );
   }
 
@@ -686,6 +887,18 @@ class PlaylistsCompanion extends UpdateCompanion<Playlist> {
     if (channelCount.present) {
       map['channel_count'] = Variable<int>(channelCount.value);
     }
+    if (playlistType.present) {
+      map['playlist_type'] = Variable<String>(playlistType.value);
+    }
+    if (xtreamServer.present) {
+      map['xtream_server'] = Variable<String>(xtreamServer.value);
+    }
+    if (xtreamUsername.present) {
+      map['xtream_username'] = Variable<String>(xtreamUsername.value);
+    }
+    if (xtreamPassword.present) {
+      map['xtream_password'] = Variable<String>(xtreamPassword.value);
+    }
     return map;
   }
 
@@ -703,7 +916,556 @@ class PlaylistsCompanion extends UpdateCompanion<Playlist> {
           ..write('refreshIntervalHours: $refreshIntervalHours, ')
           ..write('colorTag: $colorTag, ')
           ..write('sortOrder: $sortOrder, ')
-          ..write('channelCount: $channelCount')
+          ..write('channelCount: $channelCount, ')
+          ..write('playlistType: $playlistType, ')
+          ..write('xtreamServer: $xtreamServer, ')
+          ..write('xtreamUsername: $xtreamUsername, ')
+          ..write('xtreamPassword: $xtreamPassword')
+          ..write(')'))
+        .toString();
+  }
+}
+
+class $SeriesEntriesTable extends SeriesEntries
+    with TableInfo<$SeriesEntriesTable, SeriesEntry> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $SeriesEntriesTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _idMeta = const VerificationMeta('id');
+  @override
+  late final GeneratedColumn<int> id = GeneratedColumn<int>(
+    'id',
+    aliasedName,
+    false,
+    hasAutoIncrement: true,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'PRIMARY KEY AUTOINCREMENT',
+    ),
+  );
+  static const VerificationMeta _uuidMeta = const VerificationMeta('uuid');
+  @override
+  late final GeneratedColumn<String> uuid = GeneratedColumn<String>(
+    'uuid',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+    defaultConstraints: GeneratedColumn.constraintIsAlways('UNIQUE'),
+  );
+  static const VerificationMeta _nameMeta = const VerificationMeta('name');
+  @override
+  late final GeneratedColumn<String> name = GeneratedColumn<String>(
+    'name',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _coverUrlMeta = const VerificationMeta(
+    'coverUrl',
+  );
+  @override
+  late final GeneratedColumn<String> coverUrl = GeneratedColumn<String>(
+    'cover_url',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _genreMeta = const VerificationMeta('genre');
+  @override
+  late final GeneratedColumn<String> genre = GeneratedColumn<String>(
+    'genre',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _plotMeta = const VerificationMeta('plot');
+  @override
+  late final GeneratedColumn<String> plot = GeneratedColumn<String>(
+    'plot',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _playlistIdMeta = const VerificationMeta(
+    'playlistId',
+  );
+  @override
+  late final GeneratedColumn<int> playlistId = GeneratedColumn<int>(
+    'playlist_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: true,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'REFERENCES playlists (id)',
+    ),
+  );
+  static const VerificationMeta _dateAddedMeta = const VerificationMeta(
+    'dateAdded',
+  );
+  @override
+  late final GeneratedColumn<DateTime> dateAdded = GeneratedColumn<DateTime>(
+    'date_added',
+    aliasedName,
+    false,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: false,
+    defaultValue: currentDateAndTime,
+  );
+  static const VerificationMeta _sortOrderMeta = const VerificationMeta(
+    'sortOrder',
+  );
+  @override
+  late final GeneratedColumn<int> sortOrder = GeneratedColumn<int>(
+    'sort_order',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(0),
+  );
+  @override
+  List<GeneratedColumn> get $columns => [
+    id,
+    uuid,
+    name,
+    coverUrl,
+    genre,
+    plot,
+    playlistId,
+    dateAdded,
+    sortOrder,
+  ];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'series_entries';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<SeriesEntry> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('id')) {
+      context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
+    }
+    if (data.containsKey('uuid')) {
+      context.handle(
+        _uuidMeta,
+        uuid.isAcceptableOrUnknown(data['uuid']!, _uuidMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_uuidMeta);
+    }
+    if (data.containsKey('name')) {
+      context.handle(
+        _nameMeta,
+        name.isAcceptableOrUnknown(data['name']!, _nameMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_nameMeta);
+    }
+    if (data.containsKey('cover_url')) {
+      context.handle(
+        _coverUrlMeta,
+        coverUrl.isAcceptableOrUnknown(data['cover_url']!, _coverUrlMeta),
+      );
+    }
+    if (data.containsKey('genre')) {
+      context.handle(
+        _genreMeta,
+        genre.isAcceptableOrUnknown(data['genre']!, _genreMeta),
+      );
+    }
+    if (data.containsKey('plot')) {
+      context.handle(
+        _plotMeta,
+        plot.isAcceptableOrUnknown(data['plot']!, _plotMeta),
+      );
+    }
+    if (data.containsKey('playlist_id')) {
+      context.handle(
+        _playlistIdMeta,
+        playlistId.isAcceptableOrUnknown(data['playlist_id']!, _playlistIdMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_playlistIdMeta);
+    }
+    if (data.containsKey('date_added')) {
+      context.handle(
+        _dateAddedMeta,
+        dateAdded.isAcceptableOrUnknown(data['date_added']!, _dateAddedMeta),
+      );
+    }
+    if (data.containsKey('sort_order')) {
+      context.handle(
+        _sortOrderMeta,
+        sortOrder.isAcceptableOrUnknown(data['sort_order']!, _sortOrderMeta),
+      );
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {id};
+  @override
+  SeriesEntry map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return SeriesEntry(
+      id: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}id'],
+      )!,
+      uuid: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}uuid'],
+      )!,
+      name: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}name'],
+      )!,
+      coverUrl: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}cover_url'],
+      ),
+      genre: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}genre'],
+      ),
+      plot: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}plot'],
+      ),
+      playlistId: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}playlist_id'],
+      )!,
+      dateAdded: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}date_added'],
+      )!,
+      sortOrder: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}sort_order'],
+      )!,
+    );
+  }
+
+  @override
+  $SeriesEntriesTable createAlias(String alias) {
+    return $SeriesEntriesTable(attachedDatabase, alias);
+  }
+}
+
+class SeriesEntry extends DataClass implements Insertable<SeriesEntry> {
+  final int id;
+  final String uuid;
+  final String name;
+  final String? coverUrl;
+  final String? genre;
+  final String? plot;
+  final int playlistId;
+  final DateTime dateAdded;
+  final int sortOrder;
+  const SeriesEntry({
+    required this.id,
+    required this.uuid,
+    required this.name,
+    this.coverUrl,
+    this.genre,
+    this.plot,
+    required this.playlistId,
+    required this.dateAdded,
+    required this.sortOrder,
+  });
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['id'] = Variable<int>(id);
+    map['uuid'] = Variable<String>(uuid);
+    map['name'] = Variable<String>(name);
+    if (!nullToAbsent || coverUrl != null) {
+      map['cover_url'] = Variable<String>(coverUrl);
+    }
+    if (!nullToAbsent || genre != null) {
+      map['genre'] = Variable<String>(genre);
+    }
+    if (!nullToAbsent || plot != null) {
+      map['plot'] = Variable<String>(plot);
+    }
+    map['playlist_id'] = Variable<int>(playlistId);
+    map['date_added'] = Variable<DateTime>(dateAdded);
+    map['sort_order'] = Variable<int>(sortOrder);
+    return map;
+  }
+
+  SeriesEntriesCompanion toCompanion(bool nullToAbsent) {
+    return SeriesEntriesCompanion(
+      id: Value(id),
+      uuid: Value(uuid),
+      name: Value(name),
+      coverUrl: coverUrl == null && nullToAbsent
+          ? const Value.absent()
+          : Value(coverUrl),
+      genre: genre == null && nullToAbsent
+          ? const Value.absent()
+          : Value(genre),
+      plot: plot == null && nullToAbsent ? const Value.absent() : Value(plot),
+      playlistId: Value(playlistId),
+      dateAdded: Value(dateAdded),
+      sortOrder: Value(sortOrder),
+    );
+  }
+
+  factory SeriesEntry.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return SeriesEntry(
+      id: serializer.fromJson<int>(json['id']),
+      uuid: serializer.fromJson<String>(json['uuid']),
+      name: serializer.fromJson<String>(json['name']),
+      coverUrl: serializer.fromJson<String?>(json['coverUrl']),
+      genre: serializer.fromJson<String?>(json['genre']),
+      plot: serializer.fromJson<String?>(json['plot']),
+      playlistId: serializer.fromJson<int>(json['playlistId']),
+      dateAdded: serializer.fromJson<DateTime>(json['dateAdded']),
+      sortOrder: serializer.fromJson<int>(json['sortOrder']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'id': serializer.toJson<int>(id),
+      'uuid': serializer.toJson<String>(uuid),
+      'name': serializer.toJson<String>(name),
+      'coverUrl': serializer.toJson<String?>(coverUrl),
+      'genre': serializer.toJson<String?>(genre),
+      'plot': serializer.toJson<String?>(plot),
+      'playlistId': serializer.toJson<int>(playlistId),
+      'dateAdded': serializer.toJson<DateTime>(dateAdded),
+      'sortOrder': serializer.toJson<int>(sortOrder),
+    };
+  }
+
+  SeriesEntry copyWith({
+    int? id,
+    String? uuid,
+    String? name,
+    Value<String?> coverUrl = const Value.absent(),
+    Value<String?> genre = const Value.absent(),
+    Value<String?> plot = const Value.absent(),
+    int? playlistId,
+    DateTime? dateAdded,
+    int? sortOrder,
+  }) => SeriesEntry(
+    id: id ?? this.id,
+    uuid: uuid ?? this.uuid,
+    name: name ?? this.name,
+    coverUrl: coverUrl.present ? coverUrl.value : this.coverUrl,
+    genre: genre.present ? genre.value : this.genre,
+    plot: plot.present ? plot.value : this.plot,
+    playlistId: playlistId ?? this.playlistId,
+    dateAdded: dateAdded ?? this.dateAdded,
+    sortOrder: sortOrder ?? this.sortOrder,
+  );
+  SeriesEntry copyWithCompanion(SeriesEntriesCompanion data) {
+    return SeriesEntry(
+      id: data.id.present ? data.id.value : this.id,
+      uuid: data.uuid.present ? data.uuid.value : this.uuid,
+      name: data.name.present ? data.name.value : this.name,
+      coverUrl: data.coverUrl.present ? data.coverUrl.value : this.coverUrl,
+      genre: data.genre.present ? data.genre.value : this.genre,
+      plot: data.plot.present ? data.plot.value : this.plot,
+      playlistId: data.playlistId.present
+          ? data.playlistId.value
+          : this.playlistId,
+      dateAdded: data.dateAdded.present ? data.dateAdded.value : this.dateAdded,
+      sortOrder: data.sortOrder.present ? data.sortOrder.value : this.sortOrder,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('SeriesEntry(')
+          ..write('id: $id, ')
+          ..write('uuid: $uuid, ')
+          ..write('name: $name, ')
+          ..write('coverUrl: $coverUrl, ')
+          ..write('genre: $genre, ')
+          ..write('plot: $plot, ')
+          ..write('playlistId: $playlistId, ')
+          ..write('dateAdded: $dateAdded, ')
+          ..write('sortOrder: $sortOrder')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(
+    id,
+    uuid,
+    name,
+    coverUrl,
+    genre,
+    plot,
+    playlistId,
+    dateAdded,
+    sortOrder,
+  );
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is SeriesEntry &&
+          other.id == this.id &&
+          other.uuid == this.uuid &&
+          other.name == this.name &&
+          other.coverUrl == this.coverUrl &&
+          other.genre == this.genre &&
+          other.plot == this.plot &&
+          other.playlistId == this.playlistId &&
+          other.dateAdded == this.dateAdded &&
+          other.sortOrder == this.sortOrder);
+}
+
+class SeriesEntriesCompanion extends UpdateCompanion<SeriesEntry> {
+  final Value<int> id;
+  final Value<String> uuid;
+  final Value<String> name;
+  final Value<String?> coverUrl;
+  final Value<String?> genre;
+  final Value<String?> plot;
+  final Value<int> playlistId;
+  final Value<DateTime> dateAdded;
+  final Value<int> sortOrder;
+  const SeriesEntriesCompanion({
+    this.id = const Value.absent(),
+    this.uuid = const Value.absent(),
+    this.name = const Value.absent(),
+    this.coverUrl = const Value.absent(),
+    this.genre = const Value.absent(),
+    this.plot = const Value.absent(),
+    this.playlistId = const Value.absent(),
+    this.dateAdded = const Value.absent(),
+    this.sortOrder = const Value.absent(),
+  });
+  SeriesEntriesCompanion.insert({
+    this.id = const Value.absent(),
+    required String uuid,
+    required String name,
+    this.coverUrl = const Value.absent(),
+    this.genre = const Value.absent(),
+    this.plot = const Value.absent(),
+    required int playlistId,
+    this.dateAdded = const Value.absent(),
+    this.sortOrder = const Value.absent(),
+  }) : uuid = Value(uuid),
+       name = Value(name),
+       playlistId = Value(playlistId);
+  static Insertable<SeriesEntry> custom({
+    Expression<int>? id,
+    Expression<String>? uuid,
+    Expression<String>? name,
+    Expression<String>? coverUrl,
+    Expression<String>? genre,
+    Expression<String>? plot,
+    Expression<int>? playlistId,
+    Expression<DateTime>? dateAdded,
+    Expression<int>? sortOrder,
+  }) {
+    return RawValuesInsertable({
+      if (id != null) 'id': id,
+      if (uuid != null) 'uuid': uuid,
+      if (name != null) 'name': name,
+      if (coverUrl != null) 'cover_url': coverUrl,
+      if (genre != null) 'genre': genre,
+      if (plot != null) 'plot': plot,
+      if (playlistId != null) 'playlist_id': playlistId,
+      if (dateAdded != null) 'date_added': dateAdded,
+      if (sortOrder != null) 'sort_order': sortOrder,
+    });
+  }
+
+  SeriesEntriesCompanion copyWith({
+    Value<int>? id,
+    Value<String>? uuid,
+    Value<String>? name,
+    Value<String?>? coverUrl,
+    Value<String?>? genre,
+    Value<String?>? plot,
+    Value<int>? playlistId,
+    Value<DateTime>? dateAdded,
+    Value<int>? sortOrder,
+  }) {
+    return SeriesEntriesCompanion(
+      id: id ?? this.id,
+      uuid: uuid ?? this.uuid,
+      name: name ?? this.name,
+      coverUrl: coverUrl ?? this.coverUrl,
+      genre: genre ?? this.genre,
+      plot: plot ?? this.plot,
+      playlistId: playlistId ?? this.playlistId,
+      dateAdded: dateAdded ?? this.dateAdded,
+      sortOrder: sortOrder ?? this.sortOrder,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (id.present) {
+      map['id'] = Variable<int>(id.value);
+    }
+    if (uuid.present) {
+      map['uuid'] = Variable<String>(uuid.value);
+    }
+    if (name.present) {
+      map['name'] = Variable<String>(name.value);
+    }
+    if (coverUrl.present) {
+      map['cover_url'] = Variable<String>(coverUrl.value);
+    }
+    if (genre.present) {
+      map['genre'] = Variable<String>(genre.value);
+    }
+    if (plot.present) {
+      map['plot'] = Variable<String>(plot.value);
+    }
+    if (playlistId.present) {
+      map['playlist_id'] = Variable<int>(playlistId.value);
+    }
+    if (dateAdded.present) {
+      map['date_added'] = Variable<DateTime>(dateAdded.value);
+    }
+    if (sortOrder.present) {
+      map['sort_order'] = Variable<int>(sortOrder.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('SeriesEntriesCompanion(')
+          ..write('id: $id, ')
+          ..write('uuid: $uuid, ')
+          ..write('name: $name, ')
+          ..write('coverUrl: $coverUrl, ')
+          ..write('genre: $genre, ')
+          ..write('plot: $plot, ')
+          ..write('playlistId: $playlistId, ')
+          ..write('dateAdded: $dateAdded, ')
+          ..write('sortOrder: $sortOrder')
           ..write(')'))
         .toString();
   }
@@ -799,18 +1561,53 @@ class $ChannelsTable extends Channels with TableInfo<$ChannelsTable, Channel> {
     type: DriftSqlType.string,
     requiredDuringInsert: false,
   );
-  static const VerificationMeta _isVodMeta = const VerificationMeta('isVod');
+  static const VerificationMeta _contentTypeMeta = const VerificationMeta(
+    'contentType',
+  );
   @override
-  late final GeneratedColumn<bool> isVod = GeneratedColumn<bool>(
-    'is_vod',
+  late final GeneratedColumn<String> contentType = GeneratedColumn<String>(
+    'content_type',
     aliasedName,
     false,
-    type: DriftSqlType.bool,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+    defaultValue: const Constant('live'),
+  );
+  static const VerificationMeta _seriesIdMeta = const VerificationMeta(
+    'seriesId',
+  );
+  @override
+  late final GeneratedColumn<int> seriesId = GeneratedColumn<int>(
+    'series_id',
+    aliasedName,
+    true,
+    type: DriftSqlType.int,
     requiredDuringInsert: false,
     defaultConstraints: GeneratedColumn.constraintIsAlways(
-      'CHECK ("is_vod" IN (0, 1))',
+      'REFERENCES series_entries (id)',
     ),
-    defaultValue: const Constant(false),
+  );
+  static const VerificationMeta _seasonNumberMeta = const VerificationMeta(
+    'seasonNumber',
+  );
+  @override
+  late final GeneratedColumn<int> seasonNumber = GeneratedColumn<int>(
+    'season_number',
+    aliasedName,
+    true,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _episodeNumberMeta = const VerificationMeta(
+    'episodeNumber',
+  );
+  @override
+  late final GeneratedColumn<int> episodeNumber = GeneratedColumn<int>(
+    'episode_number',
+    aliasedName,
+    true,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
   );
   static const VerificationMeta _isFavoriteMeta = const VerificationMeta(
     'isFavorite',
@@ -886,7 +1683,10 @@ class $ChannelsTable extends Channels with TableInfo<$ChannelsTable, Channel> {
     groupTitle,
     tvgId,
     tvgName,
-    isVod,
+    contentType,
+    seriesId,
+    seasonNumber,
+    episodeNumber,
     isFavorite,
     lastWatched,
     watchProgress,
@@ -956,10 +1756,37 @@ class $ChannelsTable extends Channels with TableInfo<$ChannelsTable, Channel> {
         tvgName.isAcceptableOrUnknown(data['tvg_name']!, _tvgNameMeta),
       );
     }
-    if (data.containsKey('is_vod')) {
+    if (data.containsKey('content_type')) {
       context.handle(
-        _isVodMeta,
-        isVod.isAcceptableOrUnknown(data['is_vod']!, _isVodMeta),
+        _contentTypeMeta,
+        contentType.isAcceptableOrUnknown(
+          data['content_type']!,
+          _contentTypeMeta,
+        ),
+      );
+    }
+    if (data.containsKey('series_id')) {
+      context.handle(
+        _seriesIdMeta,
+        seriesId.isAcceptableOrUnknown(data['series_id']!, _seriesIdMeta),
+      );
+    }
+    if (data.containsKey('season_number')) {
+      context.handle(
+        _seasonNumberMeta,
+        seasonNumber.isAcceptableOrUnknown(
+          data['season_number']!,
+          _seasonNumberMeta,
+        ),
+      );
+    }
+    if (data.containsKey('episode_number')) {
+      context.handle(
+        _episodeNumberMeta,
+        episodeNumber.isAcceptableOrUnknown(
+          data['episode_number']!,
+          _episodeNumberMeta,
+        ),
       );
     }
     if (data.containsKey('is_favorite')) {
@@ -1041,10 +1868,22 @@ class $ChannelsTable extends Channels with TableInfo<$ChannelsTable, Channel> {
         DriftSqlType.string,
         data['${effectivePrefix}tvg_name'],
       ),
-      isVod: attachedDatabase.typeMapping.read(
-        DriftSqlType.bool,
-        data['${effectivePrefix}is_vod'],
+      contentType: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}content_type'],
       )!,
+      seriesId: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}series_id'],
+      ),
+      seasonNumber: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}season_number'],
+      ),
+      episodeNumber: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}episode_number'],
+      ),
       isFavorite: attachedDatabase.typeMapping.read(
         DriftSqlType.bool,
         data['${effectivePrefix}is_favorite'],
@@ -1083,7 +1922,10 @@ class Channel extends DataClass implements Insertable<Channel> {
   final String? groupTitle;
   final String? tvgId;
   final String? tvgName;
-  final bool isVod;
+  final String contentType;
+  final int? seriesId;
+  final int? seasonNumber;
+  final int? episodeNumber;
   final bool isFavorite;
   final DateTime? lastWatched;
   final double watchProgress;
@@ -1098,7 +1940,10 @@ class Channel extends DataClass implements Insertable<Channel> {
     this.groupTitle,
     this.tvgId,
     this.tvgName,
-    required this.isVod,
+    required this.contentType,
+    this.seriesId,
+    this.seasonNumber,
+    this.episodeNumber,
     required this.isFavorite,
     this.lastWatched,
     required this.watchProgress,
@@ -1124,7 +1969,16 @@ class Channel extends DataClass implements Insertable<Channel> {
     if (!nullToAbsent || tvgName != null) {
       map['tvg_name'] = Variable<String>(tvgName);
     }
-    map['is_vod'] = Variable<bool>(isVod);
+    map['content_type'] = Variable<String>(contentType);
+    if (!nullToAbsent || seriesId != null) {
+      map['series_id'] = Variable<int>(seriesId);
+    }
+    if (!nullToAbsent || seasonNumber != null) {
+      map['season_number'] = Variable<int>(seasonNumber);
+    }
+    if (!nullToAbsent || episodeNumber != null) {
+      map['episode_number'] = Variable<int>(episodeNumber);
+    }
     map['is_favorite'] = Variable<bool>(isFavorite);
     if (!nullToAbsent || lastWatched != null) {
       map['last_watched'] = Variable<DateTime>(lastWatched);
@@ -1153,7 +2007,16 @@ class Channel extends DataClass implements Insertable<Channel> {
       tvgName: tvgName == null && nullToAbsent
           ? const Value.absent()
           : Value(tvgName),
-      isVod: Value(isVod),
+      contentType: Value(contentType),
+      seriesId: seriesId == null && nullToAbsent
+          ? const Value.absent()
+          : Value(seriesId),
+      seasonNumber: seasonNumber == null && nullToAbsent
+          ? const Value.absent()
+          : Value(seasonNumber),
+      episodeNumber: episodeNumber == null && nullToAbsent
+          ? const Value.absent()
+          : Value(episodeNumber),
       isFavorite: Value(isFavorite),
       lastWatched: lastWatched == null && nullToAbsent
           ? const Value.absent()
@@ -1178,7 +2041,10 @@ class Channel extends DataClass implements Insertable<Channel> {
       groupTitle: serializer.fromJson<String?>(json['groupTitle']),
       tvgId: serializer.fromJson<String?>(json['tvgId']),
       tvgName: serializer.fromJson<String?>(json['tvgName']),
-      isVod: serializer.fromJson<bool>(json['isVod']),
+      contentType: serializer.fromJson<String>(json['contentType']),
+      seriesId: serializer.fromJson<int?>(json['seriesId']),
+      seasonNumber: serializer.fromJson<int?>(json['seasonNumber']),
+      episodeNumber: serializer.fromJson<int?>(json['episodeNumber']),
       isFavorite: serializer.fromJson<bool>(json['isFavorite']),
       lastWatched: serializer.fromJson<DateTime?>(json['lastWatched']),
       watchProgress: serializer.fromJson<double>(json['watchProgress']),
@@ -1198,7 +2064,10 @@ class Channel extends DataClass implements Insertable<Channel> {
       'groupTitle': serializer.toJson<String?>(groupTitle),
       'tvgId': serializer.toJson<String?>(tvgId),
       'tvgName': serializer.toJson<String?>(tvgName),
-      'isVod': serializer.toJson<bool>(isVod),
+      'contentType': serializer.toJson<String>(contentType),
+      'seriesId': serializer.toJson<int?>(seriesId),
+      'seasonNumber': serializer.toJson<int?>(seasonNumber),
+      'episodeNumber': serializer.toJson<int?>(episodeNumber),
       'isFavorite': serializer.toJson<bool>(isFavorite),
       'lastWatched': serializer.toJson<DateTime?>(lastWatched),
       'watchProgress': serializer.toJson<double>(watchProgress),
@@ -1216,7 +2085,10 @@ class Channel extends DataClass implements Insertable<Channel> {
     Value<String?> groupTitle = const Value.absent(),
     Value<String?> tvgId = const Value.absent(),
     Value<String?> tvgName = const Value.absent(),
-    bool? isVod,
+    String? contentType,
+    Value<int?> seriesId = const Value.absent(),
+    Value<int?> seasonNumber = const Value.absent(),
+    Value<int?> episodeNumber = const Value.absent(),
     bool? isFavorite,
     Value<DateTime?> lastWatched = const Value.absent(),
     double? watchProgress,
@@ -1231,7 +2103,12 @@ class Channel extends DataClass implements Insertable<Channel> {
     groupTitle: groupTitle.present ? groupTitle.value : this.groupTitle,
     tvgId: tvgId.present ? tvgId.value : this.tvgId,
     tvgName: tvgName.present ? tvgName.value : this.tvgName,
-    isVod: isVod ?? this.isVod,
+    contentType: contentType ?? this.contentType,
+    seriesId: seriesId.present ? seriesId.value : this.seriesId,
+    seasonNumber: seasonNumber.present ? seasonNumber.value : this.seasonNumber,
+    episodeNumber: episodeNumber.present
+        ? episodeNumber.value
+        : this.episodeNumber,
     isFavorite: isFavorite ?? this.isFavorite,
     lastWatched: lastWatched.present ? lastWatched.value : this.lastWatched,
     watchProgress: watchProgress ?? this.watchProgress,
@@ -1250,7 +2127,16 @@ class Channel extends DataClass implements Insertable<Channel> {
           : this.groupTitle,
       tvgId: data.tvgId.present ? data.tvgId.value : this.tvgId,
       tvgName: data.tvgName.present ? data.tvgName.value : this.tvgName,
-      isVod: data.isVod.present ? data.isVod.value : this.isVod,
+      contentType: data.contentType.present
+          ? data.contentType.value
+          : this.contentType,
+      seriesId: data.seriesId.present ? data.seriesId.value : this.seriesId,
+      seasonNumber: data.seasonNumber.present
+          ? data.seasonNumber.value
+          : this.seasonNumber,
+      episodeNumber: data.episodeNumber.present
+          ? data.episodeNumber.value
+          : this.episodeNumber,
       isFavorite: data.isFavorite.present
           ? data.isFavorite.value
           : this.isFavorite,
@@ -1278,7 +2164,10 @@ class Channel extends DataClass implements Insertable<Channel> {
           ..write('groupTitle: $groupTitle, ')
           ..write('tvgId: $tvgId, ')
           ..write('tvgName: $tvgName, ')
-          ..write('isVod: $isVod, ')
+          ..write('contentType: $contentType, ')
+          ..write('seriesId: $seriesId, ')
+          ..write('seasonNumber: $seasonNumber, ')
+          ..write('episodeNumber: $episodeNumber, ')
           ..write('isFavorite: $isFavorite, ')
           ..write('lastWatched: $lastWatched, ')
           ..write('watchProgress: $watchProgress, ')
@@ -1298,7 +2187,10 @@ class Channel extends DataClass implements Insertable<Channel> {
     groupTitle,
     tvgId,
     tvgName,
-    isVod,
+    contentType,
+    seriesId,
+    seasonNumber,
+    episodeNumber,
     isFavorite,
     lastWatched,
     watchProgress,
@@ -1317,7 +2209,10 @@ class Channel extends DataClass implements Insertable<Channel> {
           other.groupTitle == this.groupTitle &&
           other.tvgId == this.tvgId &&
           other.tvgName == this.tvgName &&
-          other.isVod == this.isVod &&
+          other.contentType == this.contentType &&
+          other.seriesId == this.seriesId &&
+          other.seasonNumber == this.seasonNumber &&
+          other.episodeNumber == this.episodeNumber &&
           other.isFavorite == this.isFavorite &&
           other.lastWatched == this.lastWatched &&
           other.watchProgress == this.watchProgress &&
@@ -1334,7 +2229,10 @@ class ChannelsCompanion extends UpdateCompanion<Channel> {
   final Value<String?> groupTitle;
   final Value<String?> tvgId;
   final Value<String?> tvgName;
-  final Value<bool> isVod;
+  final Value<String> contentType;
+  final Value<int?> seriesId;
+  final Value<int?> seasonNumber;
+  final Value<int?> episodeNumber;
   final Value<bool> isFavorite;
   final Value<DateTime?> lastWatched;
   final Value<double> watchProgress;
@@ -1349,7 +2247,10 @@ class ChannelsCompanion extends UpdateCompanion<Channel> {
     this.groupTitle = const Value.absent(),
     this.tvgId = const Value.absent(),
     this.tvgName = const Value.absent(),
-    this.isVod = const Value.absent(),
+    this.contentType = const Value.absent(),
+    this.seriesId = const Value.absent(),
+    this.seasonNumber = const Value.absent(),
+    this.episodeNumber = const Value.absent(),
     this.isFavorite = const Value.absent(),
     this.lastWatched = const Value.absent(),
     this.watchProgress = const Value.absent(),
@@ -1365,7 +2266,10 @@ class ChannelsCompanion extends UpdateCompanion<Channel> {
     this.groupTitle = const Value.absent(),
     this.tvgId = const Value.absent(),
     this.tvgName = const Value.absent(),
-    this.isVod = const Value.absent(),
+    this.contentType = const Value.absent(),
+    this.seriesId = const Value.absent(),
+    this.seasonNumber = const Value.absent(),
+    this.episodeNumber = const Value.absent(),
     this.isFavorite = const Value.absent(),
     this.lastWatched = const Value.absent(),
     this.watchProgress = const Value.absent(),
@@ -1384,7 +2288,10 @@ class ChannelsCompanion extends UpdateCompanion<Channel> {
     Expression<String>? groupTitle,
     Expression<String>? tvgId,
     Expression<String>? tvgName,
-    Expression<bool>? isVod,
+    Expression<String>? contentType,
+    Expression<int>? seriesId,
+    Expression<int>? seasonNumber,
+    Expression<int>? episodeNumber,
     Expression<bool>? isFavorite,
     Expression<DateTime>? lastWatched,
     Expression<double>? watchProgress,
@@ -1400,7 +2307,10 @@ class ChannelsCompanion extends UpdateCompanion<Channel> {
       if (groupTitle != null) 'group_title': groupTitle,
       if (tvgId != null) 'tvg_id': tvgId,
       if (tvgName != null) 'tvg_name': tvgName,
-      if (isVod != null) 'is_vod': isVod,
+      if (contentType != null) 'content_type': contentType,
+      if (seriesId != null) 'series_id': seriesId,
+      if (seasonNumber != null) 'season_number': seasonNumber,
+      if (episodeNumber != null) 'episode_number': episodeNumber,
       if (isFavorite != null) 'is_favorite': isFavorite,
       if (lastWatched != null) 'last_watched': lastWatched,
       if (watchProgress != null) 'watch_progress': watchProgress,
@@ -1418,7 +2328,10 @@ class ChannelsCompanion extends UpdateCompanion<Channel> {
     Value<String?>? groupTitle,
     Value<String?>? tvgId,
     Value<String?>? tvgName,
-    Value<bool>? isVod,
+    Value<String>? contentType,
+    Value<int?>? seriesId,
+    Value<int?>? seasonNumber,
+    Value<int?>? episodeNumber,
     Value<bool>? isFavorite,
     Value<DateTime?>? lastWatched,
     Value<double>? watchProgress,
@@ -1434,7 +2347,10 @@ class ChannelsCompanion extends UpdateCompanion<Channel> {
       groupTitle: groupTitle ?? this.groupTitle,
       tvgId: tvgId ?? this.tvgId,
       tvgName: tvgName ?? this.tvgName,
-      isVod: isVod ?? this.isVod,
+      contentType: contentType ?? this.contentType,
+      seriesId: seriesId ?? this.seriesId,
+      seasonNumber: seasonNumber ?? this.seasonNumber,
+      episodeNumber: episodeNumber ?? this.episodeNumber,
       isFavorite: isFavorite ?? this.isFavorite,
       lastWatched: lastWatched ?? this.lastWatched,
       watchProgress: watchProgress ?? this.watchProgress,
@@ -1470,8 +2386,17 @@ class ChannelsCompanion extends UpdateCompanion<Channel> {
     if (tvgName.present) {
       map['tvg_name'] = Variable<String>(tvgName.value);
     }
-    if (isVod.present) {
-      map['is_vod'] = Variable<bool>(isVod.value);
+    if (contentType.present) {
+      map['content_type'] = Variable<String>(contentType.value);
+    }
+    if (seriesId.present) {
+      map['series_id'] = Variable<int>(seriesId.value);
+    }
+    if (seasonNumber.present) {
+      map['season_number'] = Variable<int>(seasonNumber.value);
+    }
+    if (episodeNumber.present) {
+      map['episode_number'] = Variable<int>(episodeNumber.value);
     }
     if (isFavorite.present) {
       map['is_favorite'] = Variable<bool>(isFavorite.value);
@@ -1502,7 +2427,10 @@ class ChannelsCompanion extends UpdateCompanion<Channel> {
           ..write('groupTitle: $groupTitle, ')
           ..write('tvgId: $tvgId, ')
           ..write('tvgName: $tvgName, ')
-          ..write('isVod: $isVod, ')
+          ..write('contentType: $contentType, ')
+          ..write('seriesId: $seriesId, ')
+          ..write('seasonNumber: $seasonNumber, ')
+          ..write('episodeNumber: $episodeNumber, ')
           ..write('isFavorite: $isFavorite, ')
           ..write('lastWatched: $lastWatched, ')
           ..write('watchProgress: $watchProgress, ')
@@ -3098,6 +4026,7 @@ abstract class _$AppDatabase extends GeneratedDatabase {
   _$AppDatabase(QueryExecutor e) : super(e);
   $AppDatabaseManager get managers => $AppDatabaseManager(this);
   late final $PlaylistsTable playlists = $PlaylistsTable(this);
+  late final $SeriesEntriesTable seriesEntries = $SeriesEntriesTable(this);
   late final $ChannelsTable channels = $ChannelsTable(this);
   late final $EpgSourcesTable epgSources = $EpgSourcesTable(this);
   late final $EpgProgramsTable epgPrograms = $EpgProgramsTable(this);
@@ -3110,6 +4039,7 @@ abstract class _$AppDatabase extends GeneratedDatabase {
   @override
   List<DatabaseSchemaEntity> get allSchemaEntities => [
     playlists,
+    seriesEntries,
     channels,
     epgSources,
     epgPrograms,
@@ -3132,6 +4062,10 @@ typedef $$PlaylistsTableCreateCompanionBuilder =
       Value<String?> colorTag,
       Value<int> sortOrder,
       Value<int> channelCount,
+      Value<String> playlistType,
+      Value<String?> xtreamServer,
+      Value<String?> xtreamUsername,
+      Value<String?> xtreamPassword,
     });
 typedef $$PlaylistsTableUpdateCompanionBuilder =
     PlaylistsCompanion Function({
@@ -3147,11 +4081,36 @@ typedef $$PlaylistsTableUpdateCompanionBuilder =
       Value<String?> colorTag,
       Value<int> sortOrder,
       Value<int> channelCount,
+      Value<String> playlistType,
+      Value<String?> xtreamServer,
+      Value<String?> xtreamUsername,
+      Value<String?> xtreamPassword,
     });
 
 final class $$PlaylistsTableReferences
     extends BaseReferences<_$AppDatabase, $PlaylistsTable, Playlist> {
   $$PlaylistsTableReferences(super.$_db, super.$_table, super.$_typedResult);
+
+  static MultiTypedResultKey<$SeriesEntriesTable, List<SeriesEntry>>
+  _seriesEntriesRefsTable(_$AppDatabase db) => MultiTypedResultKey.fromTable(
+    db.seriesEntries,
+    aliasName: $_aliasNameGenerator(
+      db.playlists.id,
+      db.seriesEntries.playlistId,
+    ),
+  );
+
+  $$SeriesEntriesTableProcessedTableManager get seriesEntriesRefs {
+    final manager = $$SeriesEntriesTableTableManager(
+      $_db,
+      $_db.seriesEntries,
+    ).filter((f) => f.playlistId.id.sqlEquals($_itemColumn<int>('id')!));
+
+    final cache = $_typedResult.readTableOrNull(_seriesEntriesRefsTable($_db));
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: cache),
+    );
+  }
 
   static MultiTypedResultKey<$ChannelsTable, List<Channel>> _channelsRefsTable(
     _$AppDatabase db,
@@ -3241,6 +4200,51 @@ class $$PlaylistsTableFilterComposer
     column: $table.channelCount,
     builder: (column) => ColumnFilters(column),
   );
+
+  ColumnFilters<String> get playlistType => $composableBuilder(
+    column: $table.playlistType,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get xtreamServer => $composableBuilder(
+    column: $table.xtreamServer,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get xtreamUsername => $composableBuilder(
+    column: $table.xtreamUsername,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get xtreamPassword => $composableBuilder(
+    column: $table.xtreamPassword,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  Expression<bool> seriesEntriesRefs(
+    Expression<bool> Function($$SeriesEntriesTableFilterComposer f) f,
+  ) {
+    final $$SeriesEntriesTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.id,
+      referencedTable: $db.seriesEntries,
+      getReferencedColumn: (t) => t.playlistId,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$SeriesEntriesTableFilterComposer(
+            $db: $db,
+            $table: $db.seriesEntries,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return f(composer);
+  }
 
   Expression<bool> channelsRefs(
     Expression<bool> Function($$ChannelsTableFilterComposer f) f,
@@ -3336,6 +4340,26 @@ class $$PlaylistsTableOrderingComposer
     column: $table.channelCount,
     builder: (column) => ColumnOrderings(column),
   );
+
+  ColumnOrderings<String> get playlistType => $composableBuilder(
+    column: $table.playlistType,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get xtreamServer => $composableBuilder(
+    column: $table.xtreamServer,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get xtreamUsername => $composableBuilder(
+    column: $table.xtreamUsername,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get xtreamPassword => $composableBuilder(
+    column: $table.xtreamPassword,
+    builder: (column) => ColumnOrderings(column),
+  );
 }
 
 class $$PlaylistsTableAnnotationComposer
@@ -3391,6 +4415,51 @@ class $$PlaylistsTableAnnotationComposer
     builder: (column) => column,
   );
 
+  GeneratedColumn<String> get playlistType => $composableBuilder(
+    column: $table.playlistType,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get xtreamServer => $composableBuilder(
+    column: $table.xtreamServer,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get xtreamUsername => $composableBuilder(
+    column: $table.xtreamUsername,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get xtreamPassword => $composableBuilder(
+    column: $table.xtreamPassword,
+    builder: (column) => column,
+  );
+
+  Expression<T> seriesEntriesRefs<T extends Object>(
+    Expression<T> Function($$SeriesEntriesTableAnnotationComposer a) f,
+  ) {
+    final $$SeriesEntriesTableAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.id,
+      referencedTable: $db.seriesEntries,
+      getReferencedColumn: (t) => t.playlistId,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$SeriesEntriesTableAnnotationComposer(
+            $db: $db,
+            $table: $db.seriesEntries,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return f(composer);
+  }
+
   Expression<T> channelsRefs<T extends Object>(
     Expression<T> Function($$ChannelsTableAnnotationComposer a) f,
   ) {
@@ -3430,7 +4499,7 @@ class $$PlaylistsTableTableManager
           $$PlaylistsTableUpdateCompanionBuilder,
           (Playlist, $$PlaylistsTableReferences),
           Playlist,
-          PrefetchHooks Function({bool channelsRefs})
+          PrefetchHooks Function({bool seriesEntriesRefs, bool channelsRefs})
         > {
   $$PlaylistsTableTableManager(_$AppDatabase db, $PlaylistsTable table)
     : super(
@@ -3457,6 +4526,10 @@ class $$PlaylistsTableTableManager
                 Value<String?> colorTag = const Value.absent(),
                 Value<int> sortOrder = const Value.absent(),
                 Value<int> channelCount = const Value.absent(),
+                Value<String> playlistType = const Value.absent(),
+                Value<String?> xtreamServer = const Value.absent(),
+                Value<String?> xtreamUsername = const Value.absent(),
+                Value<String?> xtreamPassword = const Value.absent(),
               }) => PlaylistsCompanion(
                 id: id,
                 uuid: uuid,
@@ -3470,6 +4543,10 @@ class $$PlaylistsTableTableManager
                 colorTag: colorTag,
                 sortOrder: sortOrder,
                 channelCount: channelCount,
+                playlistType: playlistType,
+                xtreamServer: xtreamServer,
+                xtreamUsername: xtreamUsername,
+                xtreamPassword: xtreamPassword,
               ),
           createCompanionCallback:
               ({
@@ -3485,6 +4562,10 @@ class $$PlaylistsTableTableManager
                 Value<String?> colorTag = const Value.absent(),
                 Value<int> sortOrder = const Value.absent(),
                 Value<int> channelCount = const Value.absent(),
+                Value<String> playlistType = const Value.absent(),
+                Value<String?> xtreamServer = const Value.absent(),
+                Value<String?> xtreamUsername = const Value.absent(),
+                Value<String?> xtreamPassword = const Value.absent(),
               }) => PlaylistsCompanion.insert(
                 id: id,
                 uuid: uuid,
@@ -3498,6 +4579,10 @@ class $$PlaylistsTableTableManager
                 colorTag: colorTag,
                 sortOrder: sortOrder,
                 channelCount: channelCount,
+                playlistType: playlistType,
+                xtreamServer: xtreamServer,
+                xtreamUsername: xtreamUsername,
+                xtreamPassword: xtreamPassword,
               ),
           withReferenceMapper: (p0) => p0
               .map(
@@ -3507,36 +4592,63 @@ class $$PlaylistsTableTableManager
                 ),
               )
               .toList(),
-          prefetchHooksCallback: ({channelsRefs = false}) {
-            return PrefetchHooks(
-              db: db,
-              explicitlyWatchedTables: [if (channelsRefs) db.channels],
-              addJoins: null,
-              getPrefetchedDataCallback: (items) async {
-                return [
-                  if (channelsRefs)
-                    await $_getPrefetchedData<
-                      Playlist,
-                      $PlaylistsTable,
-                      Channel
-                    >(
-                      currentTable: table,
-                      referencedTable: $$PlaylistsTableReferences
-                          ._channelsRefsTable(db),
-                      managerFromTypedResult: (p0) =>
-                          $$PlaylistsTableReferences(
-                            db,
-                            table,
-                            p0,
-                          ).channelsRefs,
-                      referencedItemsForCurrentItem: (item, referencedItems) =>
-                          referencedItems.where((e) => e.playlistId == item.id),
-                      typedResults: items,
-                    ),
-                ];
+          prefetchHooksCallback:
+              ({seriesEntriesRefs = false, channelsRefs = false}) {
+                return PrefetchHooks(
+                  db: db,
+                  explicitlyWatchedTables: [
+                    if (seriesEntriesRefs) db.seriesEntries,
+                    if (channelsRefs) db.channels,
+                  ],
+                  addJoins: null,
+                  getPrefetchedDataCallback: (items) async {
+                    return [
+                      if (seriesEntriesRefs)
+                        await $_getPrefetchedData<
+                          Playlist,
+                          $PlaylistsTable,
+                          SeriesEntry
+                        >(
+                          currentTable: table,
+                          referencedTable: $$PlaylistsTableReferences
+                              ._seriesEntriesRefsTable(db),
+                          managerFromTypedResult: (p0) =>
+                              $$PlaylistsTableReferences(
+                                db,
+                                table,
+                                p0,
+                              ).seriesEntriesRefs,
+                          referencedItemsForCurrentItem:
+                              (item, referencedItems) => referencedItems.where(
+                                (e) => e.playlistId == item.id,
+                              ),
+                          typedResults: items,
+                        ),
+                      if (channelsRefs)
+                        await $_getPrefetchedData<
+                          Playlist,
+                          $PlaylistsTable,
+                          Channel
+                        >(
+                          currentTable: table,
+                          referencedTable: $$PlaylistsTableReferences
+                              ._channelsRefsTable(db),
+                          managerFromTypedResult: (p0) =>
+                              $$PlaylistsTableReferences(
+                                db,
+                                table,
+                                p0,
+                              ).channelsRefs,
+                          referencedItemsForCurrentItem:
+                              (item, referencedItems) => referencedItems.where(
+                                (e) => e.playlistId == item.id,
+                              ),
+                          typedResults: items,
+                        ),
+                    ];
+                  },
+                );
               },
-            );
-          },
         ),
       );
 }
@@ -3553,7 +4665,489 @@ typedef $$PlaylistsTableProcessedTableManager =
       $$PlaylistsTableUpdateCompanionBuilder,
       (Playlist, $$PlaylistsTableReferences),
       Playlist,
-      PrefetchHooks Function({bool channelsRefs})
+      PrefetchHooks Function({bool seriesEntriesRefs, bool channelsRefs})
+    >;
+typedef $$SeriesEntriesTableCreateCompanionBuilder =
+    SeriesEntriesCompanion Function({
+      Value<int> id,
+      required String uuid,
+      required String name,
+      Value<String?> coverUrl,
+      Value<String?> genre,
+      Value<String?> plot,
+      required int playlistId,
+      Value<DateTime> dateAdded,
+      Value<int> sortOrder,
+    });
+typedef $$SeriesEntriesTableUpdateCompanionBuilder =
+    SeriesEntriesCompanion Function({
+      Value<int> id,
+      Value<String> uuid,
+      Value<String> name,
+      Value<String?> coverUrl,
+      Value<String?> genre,
+      Value<String?> plot,
+      Value<int> playlistId,
+      Value<DateTime> dateAdded,
+      Value<int> sortOrder,
+    });
+
+final class $$SeriesEntriesTableReferences
+    extends BaseReferences<_$AppDatabase, $SeriesEntriesTable, SeriesEntry> {
+  $$SeriesEntriesTableReferences(
+    super.$_db,
+    super.$_table,
+    super.$_typedResult,
+  );
+
+  static $PlaylistsTable _playlistIdTable(_$AppDatabase db) =>
+      db.playlists.createAlias(
+        $_aliasNameGenerator(db.seriesEntries.playlistId, db.playlists.id),
+      );
+
+  $$PlaylistsTableProcessedTableManager get playlistId {
+    final $_column = $_itemColumn<int>('playlist_id')!;
+
+    final manager = $$PlaylistsTableTableManager(
+      $_db,
+      $_db.playlists,
+    ).filter((f) => f.id.sqlEquals($_column));
+    final item = $_typedResult.readTableOrNull(_playlistIdTable($_db));
+    if (item == null) return manager;
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: [item]),
+    );
+  }
+
+  static MultiTypedResultKey<$ChannelsTable, List<Channel>> _channelsRefsTable(
+    _$AppDatabase db,
+  ) => MultiTypedResultKey.fromTable(
+    db.channels,
+    aliasName: $_aliasNameGenerator(db.seriesEntries.id, db.channels.seriesId),
+  );
+
+  $$ChannelsTableProcessedTableManager get channelsRefs {
+    final manager = $$ChannelsTableTableManager(
+      $_db,
+      $_db.channels,
+    ).filter((f) => f.seriesId.id.sqlEquals($_itemColumn<int>('id')!));
+
+    final cache = $_typedResult.readTableOrNull(_channelsRefsTable($_db));
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: cache),
+    );
+  }
+}
+
+class $$SeriesEntriesTableFilterComposer
+    extends Composer<_$AppDatabase, $SeriesEntriesTable> {
+  $$SeriesEntriesTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<int> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get uuid => $composableBuilder(
+    column: $table.uuid,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get name => $composableBuilder(
+    column: $table.name,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get coverUrl => $composableBuilder(
+    column: $table.coverUrl,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get genre => $composableBuilder(
+    column: $table.genre,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get plot => $composableBuilder(
+    column: $table.plot,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get dateAdded => $composableBuilder(
+    column: $table.dateAdded,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get sortOrder => $composableBuilder(
+    column: $table.sortOrder,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  $$PlaylistsTableFilterComposer get playlistId {
+    final $$PlaylistsTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.playlistId,
+      referencedTable: $db.playlists,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$PlaylistsTableFilterComposer(
+            $db: $db,
+            $table: $db.playlists,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+
+  Expression<bool> channelsRefs(
+    Expression<bool> Function($$ChannelsTableFilterComposer f) f,
+  ) {
+    final $$ChannelsTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.id,
+      referencedTable: $db.channels,
+      getReferencedColumn: (t) => t.seriesId,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$ChannelsTableFilterComposer(
+            $db: $db,
+            $table: $db.channels,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return f(composer);
+  }
+}
+
+class $$SeriesEntriesTableOrderingComposer
+    extends Composer<_$AppDatabase, $SeriesEntriesTable> {
+  $$SeriesEntriesTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<int> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get uuid => $composableBuilder(
+    column: $table.uuid,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get name => $composableBuilder(
+    column: $table.name,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get coverUrl => $composableBuilder(
+    column: $table.coverUrl,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get genre => $composableBuilder(
+    column: $table.genre,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get plot => $composableBuilder(
+    column: $table.plot,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get dateAdded => $composableBuilder(
+    column: $table.dateAdded,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get sortOrder => $composableBuilder(
+    column: $table.sortOrder,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  $$PlaylistsTableOrderingComposer get playlistId {
+    final $$PlaylistsTableOrderingComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.playlistId,
+      referencedTable: $db.playlists,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$PlaylistsTableOrderingComposer(
+            $db: $db,
+            $table: $db.playlists,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+}
+
+class $$SeriesEntriesTableAnnotationComposer
+    extends Composer<_$AppDatabase, $SeriesEntriesTable> {
+  $$SeriesEntriesTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<int> get id =>
+      $composableBuilder(column: $table.id, builder: (column) => column);
+
+  GeneratedColumn<String> get uuid =>
+      $composableBuilder(column: $table.uuid, builder: (column) => column);
+
+  GeneratedColumn<String> get name =>
+      $composableBuilder(column: $table.name, builder: (column) => column);
+
+  GeneratedColumn<String> get coverUrl =>
+      $composableBuilder(column: $table.coverUrl, builder: (column) => column);
+
+  GeneratedColumn<String> get genre =>
+      $composableBuilder(column: $table.genre, builder: (column) => column);
+
+  GeneratedColumn<String> get plot =>
+      $composableBuilder(column: $table.plot, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get dateAdded =>
+      $composableBuilder(column: $table.dateAdded, builder: (column) => column);
+
+  GeneratedColumn<int> get sortOrder =>
+      $composableBuilder(column: $table.sortOrder, builder: (column) => column);
+
+  $$PlaylistsTableAnnotationComposer get playlistId {
+    final $$PlaylistsTableAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.playlistId,
+      referencedTable: $db.playlists,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$PlaylistsTableAnnotationComposer(
+            $db: $db,
+            $table: $db.playlists,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+
+  Expression<T> channelsRefs<T extends Object>(
+    Expression<T> Function($$ChannelsTableAnnotationComposer a) f,
+  ) {
+    final $$ChannelsTableAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.id,
+      referencedTable: $db.channels,
+      getReferencedColumn: (t) => t.seriesId,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$ChannelsTableAnnotationComposer(
+            $db: $db,
+            $table: $db.channels,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return f(composer);
+  }
+}
+
+class $$SeriesEntriesTableTableManager
+    extends
+        RootTableManager<
+          _$AppDatabase,
+          $SeriesEntriesTable,
+          SeriesEntry,
+          $$SeriesEntriesTableFilterComposer,
+          $$SeriesEntriesTableOrderingComposer,
+          $$SeriesEntriesTableAnnotationComposer,
+          $$SeriesEntriesTableCreateCompanionBuilder,
+          $$SeriesEntriesTableUpdateCompanionBuilder,
+          (SeriesEntry, $$SeriesEntriesTableReferences),
+          SeriesEntry,
+          PrefetchHooks Function({bool playlistId, bool channelsRefs})
+        > {
+  $$SeriesEntriesTableTableManager(_$AppDatabase db, $SeriesEntriesTable table)
+    : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$SeriesEntriesTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$SeriesEntriesTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$SeriesEntriesTableAnnotationComposer($db: db, $table: table),
+          updateCompanionCallback:
+              ({
+                Value<int> id = const Value.absent(),
+                Value<String> uuid = const Value.absent(),
+                Value<String> name = const Value.absent(),
+                Value<String?> coverUrl = const Value.absent(),
+                Value<String?> genre = const Value.absent(),
+                Value<String?> plot = const Value.absent(),
+                Value<int> playlistId = const Value.absent(),
+                Value<DateTime> dateAdded = const Value.absent(),
+                Value<int> sortOrder = const Value.absent(),
+              }) => SeriesEntriesCompanion(
+                id: id,
+                uuid: uuid,
+                name: name,
+                coverUrl: coverUrl,
+                genre: genre,
+                plot: plot,
+                playlistId: playlistId,
+                dateAdded: dateAdded,
+                sortOrder: sortOrder,
+              ),
+          createCompanionCallback:
+              ({
+                Value<int> id = const Value.absent(),
+                required String uuid,
+                required String name,
+                Value<String?> coverUrl = const Value.absent(),
+                Value<String?> genre = const Value.absent(),
+                Value<String?> plot = const Value.absent(),
+                required int playlistId,
+                Value<DateTime> dateAdded = const Value.absent(),
+                Value<int> sortOrder = const Value.absent(),
+              }) => SeriesEntriesCompanion.insert(
+                id: id,
+                uuid: uuid,
+                name: name,
+                coverUrl: coverUrl,
+                genre: genre,
+                plot: plot,
+                playlistId: playlistId,
+                dateAdded: dateAdded,
+                sortOrder: sortOrder,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map(
+                (e) => (
+                  e.readTable(table),
+                  $$SeriesEntriesTableReferences(db, table, e),
+                ),
+              )
+              .toList(),
+          prefetchHooksCallback: ({playlistId = false, channelsRefs = false}) {
+            return PrefetchHooks(
+              db: db,
+              explicitlyWatchedTables: [if (channelsRefs) db.channels],
+              addJoins:
+                  <
+                    T extends TableManagerState<
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic
+                    >
+                  >(state) {
+                    if (playlistId) {
+                      state =
+                          state.withJoin(
+                                currentTable: table,
+                                currentColumn: table.playlistId,
+                                referencedTable: $$SeriesEntriesTableReferences
+                                    ._playlistIdTable(db),
+                                referencedColumn: $$SeriesEntriesTableReferences
+                                    ._playlistIdTable(db)
+                                    .id,
+                              )
+                              as T;
+                    }
+
+                    return state;
+                  },
+              getPrefetchedDataCallback: (items) async {
+                return [
+                  if (channelsRefs)
+                    await $_getPrefetchedData<
+                      SeriesEntry,
+                      $SeriesEntriesTable,
+                      Channel
+                    >(
+                      currentTable: table,
+                      referencedTable: $$SeriesEntriesTableReferences
+                          ._channelsRefsTable(db),
+                      managerFromTypedResult: (p0) =>
+                          $$SeriesEntriesTableReferences(
+                            db,
+                            table,
+                            p0,
+                          ).channelsRefs,
+                      referencedItemsForCurrentItem: (item, referencedItems) =>
+                          referencedItems.where((e) => e.seriesId == item.id),
+                      typedResults: items,
+                    ),
+                ];
+              },
+            );
+          },
+        ),
+      );
+}
+
+typedef $$SeriesEntriesTableProcessedTableManager =
+    ProcessedTableManager<
+      _$AppDatabase,
+      $SeriesEntriesTable,
+      SeriesEntry,
+      $$SeriesEntriesTableFilterComposer,
+      $$SeriesEntriesTableOrderingComposer,
+      $$SeriesEntriesTableAnnotationComposer,
+      $$SeriesEntriesTableCreateCompanionBuilder,
+      $$SeriesEntriesTableUpdateCompanionBuilder,
+      (SeriesEntry, $$SeriesEntriesTableReferences),
+      SeriesEntry,
+      PrefetchHooks Function({bool playlistId, bool channelsRefs})
     >;
 typedef $$ChannelsTableCreateCompanionBuilder =
     ChannelsCompanion Function({
@@ -3565,7 +5159,10 @@ typedef $$ChannelsTableCreateCompanionBuilder =
       Value<String?> groupTitle,
       Value<String?> tvgId,
       Value<String?> tvgName,
-      Value<bool> isVod,
+      Value<String> contentType,
+      Value<int?> seriesId,
+      Value<int?> seasonNumber,
+      Value<int?> episodeNumber,
       Value<bool> isFavorite,
       Value<DateTime?> lastWatched,
       Value<double> watchProgress,
@@ -3582,7 +5179,10 @@ typedef $$ChannelsTableUpdateCompanionBuilder =
       Value<String?> groupTitle,
       Value<String?> tvgId,
       Value<String?> tvgName,
-      Value<bool> isVod,
+      Value<String> contentType,
+      Value<int?> seriesId,
+      Value<int?> seasonNumber,
+      Value<int?> episodeNumber,
       Value<bool> isFavorite,
       Value<DateTime?> lastWatched,
       Value<double> watchProgress,
@@ -3593,6 +5193,25 @@ typedef $$ChannelsTableUpdateCompanionBuilder =
 final class $$ChannelsTableReferences
     extends BaseReferences<_$AppDatabase, $ChannelsTable, Channel> {
   $$ChannelsTableReferences(super.$_db, super.$_table, super.$_typedResult);
+
+  static $SeriesEntriesTable _seriesIdTable(_$AppDatabase db) =>
+      db.seriesEntries.createAlias(
+        $_aliasNameGenerator(db.channels.seriesId, db.seriesEntries.id),
+      );
+
+  $$SeriesEntriesTableProcessedTableManager? get seriesId {
+    final $_column = $_itemColumn<int>('series_id');
+    if ($_column == null) return null;
+    final manager = $$SeriesEntriesTableTableManager(
+      $_db,
+      $_db.seriesEntries,
+    ).filter((f) => f.id.sqlEquals($_column));
+    final item = $_typedResult.readTableOrNull(_seriesIdTable($_db));
+    if (item == null) return manager;
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: [item]),
+    );
+  }
 
   static $PlaylistsTable _playlistIdTable(_$AppDatabase db) =>
       db.playlists.createAlias(
@@ -3687,8 +5306,18 @@ class $$ChannelsTableFilterComposer
     builder: (column) => ColumnFilters(column),
   );
 
-  ColumnFilters<bool> get isVod => $composableBuilder(
-    column: $table.isVod,
+  ColumnFilters<String> get contentType => $composableBuilder(
+    column: $table.contentType,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get seasonNumber => $composableBuilder(
+    column: $table.seasonNumber,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get episodeNumber => $composableBuilder(
+    column: $table.episodeNumber,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -3711,6 +5340,29 @@ class $$ChannelsTableFilterComposer
     column: $table.sortOrder,
     builder: (column) => ColumnFilters(column),
   );
+
+  $$SeriesEntriesTableFilterComposer get seriesId {
+    final $$SeriesEntriesTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.seriesId,
+      referencedTable: $db.seriesEntries,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$SeriesEntriesTableFilterComposer(
+            $db: $db,
+            $table: $db.seriesEntries,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
 
   $$PlaylistsTableFilterComposer get playlistId {
     final $$PlaylistsTableFilterComposer composer = $composerBuilder(
@@ -3810,8 +5462,18 @@ class $$ChannelsTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
-  ColumnOrderings<bool> get isVod => $composableBuilder(
-    column: $table.isVod,
+  ColumnOrderings<String> get contentType => $composableBuilder(
+    column: $table.contentType,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get seasonNumber => $composableBuilder(
+    column: $table.seasonNumber,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get episodeNumber => $composableBuilder(
+    column: $table.episodeNumber,
     builder: (column) => ColumnOrderings(column),
   );
 
@@ -3834,6 +5496,29 @@ class $$ChannelsTableOrderingComposer
     column: $table.sortOrder,
     builder: (column) => ColumnOrderings(column),
   );
+
+  $$SeriesEntriesTableOrderingComposer get seriesId {
+    final $$SeriesEntriesTableOrderingComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.seriesId,
+      referencedTable: $db.seriesEntries,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$SeriesEntriesTableOrderingComposer(
+            $db: $db,
+            $table: $db.seriesEntries,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
 
   $$PlaylistsTableOrderingComposer get playlistId {
     final $$PlaylistsTableOrderingComposer composer = $composerBuilder(
@@ -3894,8 +5579,20 @@ class $$ChannelsTableAnnotationComposer
   GeneratedColumn<String> get tvgName =>
       $composableBuilder(column: $table.tvgName, builder: (column) => column);
 
-  GeneratedColumn<bool> get isVod =>
-      $composableBuilder(column: $table.isVod, builder: (column) => column);
+  GeneratedColumn<String> get contentType => $composableBuilder(
+    column: $table.contentType,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<int> get seasonNumber => $composableBuilder(
+    column: $table.seasonNumber,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<int> get episodeNumber => $composableBuilder(
+    column: $table.episodeNumber,
+    builder: (column) => column,
+  );
 
   GeneratedColumn<bool> get isFavorite => $composableBuilder(
     column: $table.isFavorite,
@@ -3914,6 +5611,29 @@ class $$ChannelsTableAnnotationComposer
 
   GeneratedColumn<int> get sortOrder =>
       $composableBuilder(column: $table.sortOrder, builder: (column) => column);
+
+  $$SeriesEntriesTableAnnotationComposer get seriesId {
+    final $$SeriesEntriesTableAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.seriesId,
+      referencedTable: $db.seriesEntries,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$SeriesEntriesTableAnnotationComposer(
+            $db: $db,
+            $table: $db.seriesEntries,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
 
   $$PlaylistsTableAnnotationComposer get playlistId {
     final $$PlaylistsTableAnnotationComposer composer = $composerBuilder(
@@ -3978,7 +5698,11 @@ class $$ChannelsTableTableManager
           $$ChannelsTableUpdateCompanionBuilder,
           (Channel, $$ChannelsTableReferences),
           Channel,
-          PrefetchHooks Function({bool playlistId, bool collectionChannelsRefs})
+          PrefetchHooks Function({
+            bool seriesId,
+            bool playlistId,
+            bool collectionChannelsRefs,
+          })
         > {
   $$ChannelsTableTableManager(_$AppDatabase db, $ChannelsTable table)
     : super(
@@ -4001,7 +5725,10 @@ class $$ChannelsTableTableManager
                 Value<String?> groupTitle = const Value.absent(),
                 Value<String?> tvgId = const Value.absent(),
                 Value<String?> tvgName = const Value.absent(),
-                Value<bool> isVod = const Value.absent(),
+                Value<String> contentType = const Value.absent(),
+                Value<int?> seriesId = const Value.absent(),
+                Value<int?> seasonNumber = const Value.absent(),
+                Value<int?> episodeNumber = const Value.absent(),
                 Value<bool> isFavorite = const Value.absent(),
                 Value<DateTime?> lastWatched = const Value.absent(),
                 Value<double> watchProgress = const Value.absent(),
@@ -4016,7 +5743,10 @@ class $$ChannelsTableTableManager
                 groupTitle: groupTitle,
                 tvgId: tvgId,
                 tvgName: tvgName,
-                isVod: isVod,
+                contentType: contentType,
+                seriesId: seriesId,
+                seasonNumber: seasonNumber,
+                episodeNumber: episodeNumber,
                 isFavorite: isFavorite,
                 lastWatched: lastWatched,
                 watchProgress: watchProgress,
@@ -4033,7 +5763,10 @@ class $$ChannelsTableTableManager
                 Value<String?> groupTitle = const Value.absent(),
                 Value<String?> tvgId = const Value.absent(),
                 Value<String?> tvgName = const Value.absent(),
-                Value<bool> isVod = const Value.absent(),
+                Value<String> contentType = const Value.absent(),
+                Value<int?> seriesId = const Value.absent(),
+                Value<int?> seasonNumber = const Value.absent(),
+                Value<int?> episodeNumber = const Value.absent(),
                 Value<bool> isFavorite = const Value.absent(),
                 Value<DateTime?> lastWatched = const Value.absent(),
                 Value<double> watchProgress = const Value.absent(),
@@ -4048,7 +5781,10 @@ class $$ChannelsTableTableManager
                 groupTitle: groupTitle,
                 tvgId: tvgId,
                 tvgName: tvgName,
-                isVod: isVod,
+                contentType: contentType,
+                seriesId: seriesId,
+                seasonNumber: seasonNumber,
+                episodeNumber: episodeNumber,
                 isFavorite: isFavorite,
                 lastWatched: lastWatched,
                 watchProgress: watchProgress,
@@ -4064,7 +5800,11 @@ class $$ChannelsTableTableManager
               )
               .toList(),
           prefetchHooksCallback:
-              ({playlistId = false, collectionChannelsRefs = false}) {
+              ({
+                seriesId = false,
+                playlistId = false,
+                collectionChannelsRefs = false,
+              }) {
                 return PrefetchHooks(
                   db: db,
                   explicitlyWatchedTables: [
@@ -4086,6 +5826,19 @@ class $$ChannelsTableTableManager
                           dynamic
                         >
                       >(state) {
+                        if (seriesId) {
+                          state =
+                              state.withJoin(
+                                    currentTable: table,
+                                    currentColumn: table.seriesId,
+                                    referencedTable: $$ChannelsTableReferences
+                                        ._seriesIdTable(db),
+                                    referencedColumn: $$ChannelsTableReferences
+                                        ._seriesIdTable(db)
+                                        .id,
+                                  )
+                                  as T;
+                        }
                         if (playlistId) {
                           state =
                               state.withJoin(
@@ -4145,7 +5898,11 @@ typedef $$ChannelsTableProcessedTableManager =
       $$ChannelsTableUpdateCompanionBuilder,
       (Channel, $$ChannelsTableReferences),
       Channel,
-      PrefetchHooks Function({bool playlistId, bool collectionChannelsRefs})
+      PrefetchHooks Function({
+        bool seriesId,
+        bool playlistId,
+        bool collectionChannelsRefs,
+      })
     >;
 typedef $$EpgSourcesTableCreateCompanionBuilder =
     EpgSourcesCompanion Function({
@@ -5556,6 +7313,8 @@ class $AppDatabaseManager {
   $AppDatabaseManager(this._db);
   $$PlaylistsTableTableManager get playlists =>
       $$PlaylistsTableTableManager(_db, _db.playlists);
+  $$SeriesEntriesTableTableManager get seriesEntries =>
+      $$SeriesEntriesTableTableManager(_db, _db.seriesEntries);
   $$ChannelsTableTableManager get channels =>
       $$ChannelsTableTableManager(_db, _db.channels);
   $$EpgSourcesTableTableManager get epgSources =>

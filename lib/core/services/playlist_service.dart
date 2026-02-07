@@ -146,6 +146,47 @@ class PlaylistService {
     return importFromContent(content, name: effectiveName);
   }
 
+  /// Imports a single direct stream URL as a playlist with one channel.
+  ///
+  /// Creates a playlist with `playlistType` set to `'direct'` and a single
+  /// live channel entry pointing to [url].
+  ///
+  /// Returns the newly created [Playlist] database entity.
+  Future<Playlist> importFromDirectUrl(String url, {String? name}) async {
+    final effectiveName = name ?? _nameFromUrl(url);
+
+    // Determine sort order (append to end).
+    final existing = await _db.getAllPlaylists();
+    final nextSort = existing.isEmpty
+        ? 0
+        : existing.map((p) => p.sortOrder).reduce((a, b) => a > b ? a : b) + 1;
+
+    final playlist = await _db.insertPlaylist(
+      PlaylistsCompanion.insert(
+        uuid: _uuid.v4(),
+        name: effectiveName,
+        url: Value(url),
+        playlistType: Value('direct'),
+        channelCount: Value(1),
+        sortOrder: Value(nextSort),
+        lastUpdated: Value(DateTime.now()),
+      ),
+    );
+
+    await _db.insertChannelsBatch([
+      ChannelsCompanion.insert(
+        uuid: _uuid.v4(),
+        name: effectiveName,
+        streamUrl: url,
+        contentType: Value('live'),
+        sortOrder: Value(0),
+        playlistId: playlist.id,
+      ),
+    ]);
+
+    return playlist;
+  }
+
   /// Toggles the favorite status of a channel.
   Future<void> toggleFavorite(int channelId) async {
     final channel = await _db.getChannelById(channelId);
@@ -223,6 +264,7 @@ class PlaylistService {
         uuid: _uuid.v4(),
         name: name,
         url: Value(url),
+        playlistType: Value('m3u'),
         channelCount: Value(dto.channelCount),
         sortOrder: Value(nextSort),
         lastUpdated: Value(DateTime.now()),
@@ -232,6 +274,28 @@ class PlaylistService {
     // Batch-insert channels.
     final companions = _buildChannelCompanions(dto.channels, playlist.id);
     await _db.insertChannelsBatch(companions);
+
+    // Group series channels and create SeriesEntries.
+    final seriesChannels = dto.channels
+        .where((c) => c.contentType == ContentType.series && c.seriesName != null)
+        .toList();
+
+    if (seriesChannels.isNotEmpty) {
+      final seriesNames = <String>{};
+      for (final ch in seriesChannels) {
+        seriesNames.add(ch.seriesName!);
+      }
+
+      for (final seriesName in seriesNames) {
+        await _db.insertSeries(
+          SeriesEntriesCompanion.insert(
+            uuid: _uuid.v4(),
+            name: seriesName,
+            playlistId: playlist.id,
+          ),
+        );
+      }
+    }
 
     return playlist;
   }
@@ -252,7 +316,9 @@ class PlaylistService {
           groupTitle: Value(channels[i].groupTitle),
           tvgId: Value(channels[i].tvgId),
           tvgName: Value(channels[i].tvgName),
-          isVod: Value(channels[i].isVod),
+          contentType: Value(channels[i].contentType.value),
+          seasonNumber: Value(channels[i].seasonNumber),
+          episodeNumber: Value(channels[i].episodeNumber),
           sortOrder: Value(i),
           playlistId: playlistId,
         ),

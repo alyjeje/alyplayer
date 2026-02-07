@@ -12,13 +12,16 @@ class AppLocalizationsFr extends AppLocalizations {
   String get appTitle => 'AlyPlayer';
 
   @override
+  String get home => 'Accueil';
+
+  @override
   String get liveTV => 'TV en direct';
 
   @override
-  String get guide => 'Guide';
+  String get films => 'Films';
 
   @override
-  String get vod => 'VOD';
+  String get series => 'Séries';
 
   @override
   String get favorites => 'Favoris';
@@ -42,13 +45,19 @@ class AppLocalizationsFr extends AppLocalizations {
   String get searchChannels => 'Rechercher des chaînes...';
 
   @override
-  String get searchVod => 'Rechercher films et séries...';
+  String get searchFilms => 'Rechercher des films...';
+
+  @override
+  String get searchSeries => 'Rechercher des séries...';
 
   @override
   String get noChannels => 'Aucune chaîne';
 
   @override
-  String get noVodContent => 'Aucun contenu VOD';
+  String get noFilms => 'Aucun film';
+
+  @override
+  String get noSeries => 'Aucune série';
 
   @override
   String get noFavorites => 'Aucun favori';
@@ -65,6 +74,60 @@ class AppLocalizationsFr extends AppLocalizations {
 
   @override
   String get addEpgSource => 'Ajouter une source EPG';
+
+  @override
+  String get season => 'Saison';
+
+  @override
+  String get episode => 'Épisode';
+
+  @override
+  String get noEpisodes => 'Aucun épisode trouvé';
+
+  @override
+  String get trendingSeries => 'Séries tendance';
+
+  @override
+  String get trendingFilms => 'Films tendance';
+
+  @override
+  String seasonEpisode(int season, int episode) {
+    return 'S${season}E$episode';
+  }
+
+  @override
+  String episodes(int count) {
+    return '$count épisodes';
+  }
+
+  @override
+  String seasons(int count) {
+    return '$count saisons';
+  }
+
+  @override
+  String get serverUrl => 'URL du serveur';
+
+  @override
+  String get username => 'Nom d\'utilisateur';
+
+  @override
+  String get password => 'Mot de passe';
+
+  @override
+  String get connect => 'Se connecter';
+
+  @override
+  String get directUrl => 'URL directe';
+
+  @override
+  String get xtreamCodes => 'Xtream Codes';
+
+  @override
+  String get authFailed => 'Échec de l\'authentification';
+
+  @override
+  String get importMethod => 'Méthode d\'import';
 
   @override
   String get error => 'Erreur';

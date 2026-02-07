@@ -54,6 +54,38 @@ class M3UParser {
     'episodes',
   ];
 
+  // ── Series detection ──────────────────────────────────────
+
+  /// Regex patterns that identify series episode numbering in channel names.
+  static final _seriesPatterns = <RegExp>[
+    RegExp(r'[Ss](\d+)[Ee](\d+)'),        // S01E02 or s01e02
+    RegExp(r'Season\s*(\d+).*Episode\s*(\d+)', caseSensitive: false),
+    RegExp(r'(\d+)x(\d+)'),                // 1x02 format
+  ];
+
+  /// Detects series information (season/episode) in a channel name.
+  ///
+  /// Returns a record with the series name (text before the match), season
+  /// number, and episode number, or `null` if no pattern matches.
+  static ({String seriesName, int season, int episode})? parseSeriesInfo(
+    String name,
+  ) {
+    for (final pattern in _seriesPatterns) {
+      final match = pattern.firstMatch(name);
+      if (match != null) {
+        final seriesName = name.substring(0, match.start).trim();
+        final season = int.tryParse(match.group(1)!) ?? 1;
+        final episode = int.tryParse(match.group(2)!) ?? 1;
+        return (
+          seriesName: seriesName.isNotEmpty ? seriesName : name,
+          season: season,
+          episode: episode,
+        );
+      }
+    }
+    return null;
+  }
+
   // ── Public API ─────────────────────────────────────────────
 
   /// Parses raw M3U content into a [PlaylistDTO].
@@ -123,10 +155,33 @@ class M3UParser {
       } else {
         // Bare URL without #EXTINF -- derive a name from the URL.
         final name = _nameFromUrl(url);
+        final isVodContent = _isVodUrl(url);
+        ContentType contentType;
+        String? seriesName;
+        int? seasonNumber;
+        int? episodeNumber;
+
+        if (isVodContent) {
+          final seriesInfo = parseSeriesInfo(name);
+          if (seriesInfo != null) {
+            contentType = ContentType.series;
+            seriesName = seriesInfo.seriesName;
+            seasonNumber = seriesInfo.season;
+            episodeNumber = seriesInfo.episode;
+          } else {
+            contentType = ContentType.movie;
+          }
+        } else {
+          contentType = ContentType.live;
+        }
+
         channels.add(ChannelDTO(
           name: name,
           streamUrl: url,
-          isVod: _isVodUrl(url),
+          contentType: contentType,
+          seriesName: seriesName,
+          seasonNumber: seasonNumber,
+          episodeNumber: episodeNumber,
         ));
       }
     }
@@ -225,7 +280,25 @@ class M3UParser {
     final radio = extractAttribute(attributeSection, 'radio');
     if (radio != null) extras['radio'] = radio;
 
-    final isVod = _isVodUrl(url) || _isVodGroup(groupTitle);
+    final isVodContent = _isVodUrl(url) || _isVodGroup(groupTitle);
+    ContentType contentType;
+    String? seriesName;
+    int? seasonNumber;
+    int? episodeNumber;
+
+    if (isVodContent) {
+      final seriesInfo = parseSeriesInfo(name);
+      if (seriesInfo != null) {
+        contentType = ContentType.series;
+        seriesName = seriesInfo.seriesName;
+        seasonNumber = seriesInfo.season;
+        episodeNumber = seriesInfo.episode;
+      } else {
+        contentType = ContentType.movie;
+      }
+    } else {
+      contentType = ContentType.live;
+    }
 
     return ChannelDTO(
       name: name,
@@ -234,7 +307,10 @@ class M3UParser {
       tvgId: tvgId,
       tvgName: tvgName,
       tvgLogo: tvgLogo,
-      isVod: isVod,
+      contentType: contentType,
+      seriesName: seriesName,
+      seasonNumber: seasonNumber,
+      episodeNumber: episodeNumber,
       extras: extras,
     );
   }
