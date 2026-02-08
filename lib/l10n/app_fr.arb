@@ -164,5 +164,9 @@
   "sortByRecent": "Trier par récent",
   "sortByGroup": "Trier par groupe",
   "subtitles": "Sous-titres",
-  "off": "Désactivé"
+  "off": "Désactivé",
+  "audioTrack": "Piste audio",
+  "language": "Langue",
+  "english": "English",
+  "french": "Français"
 }

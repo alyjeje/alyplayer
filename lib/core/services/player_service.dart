@@ -17,7 +17,11 @@ import 'package:aly_player/core/models/dtos.dart';
 /// simplified, reactive API for the UI layer.
 class PlayerService {
   PlayerService({AppDatabase? database}) : _db = database {
-    _player = Player();
+    _player = Player(
+      configuration: const PlayerConfiguration(
+        bufferSize: 32 * 1024 * 1024, // 32 MB buffer for live streams
+      ),
+    );
     _videoController = VideoController(_player);
     _subscribeToPlayerStreams();
   }
@@ -152,6 +156,14 @@ class PlayerService {
   /// Disables subtitles.
   Future<void> disableSubtitles() async {
     await _player.setSubtitleTrack(SubtitleTrack.no());
+  }
+
+  /// Returns the list of available audio tracks.
+  List<AudioTrack> get audioTracks => _player.state.tracks.audio;
+
+  /// Sets the active audio track.
+  Future<void> setAudioTrack(AudioTrack track) async {
+    await _player.setAudioTrack(track);
   }
 
   /// Sets the playback speed [rate] (e.g. 1.0 for normal, 2.0 for double).

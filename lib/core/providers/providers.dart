@@ -1,7 +1,9 @@
 /// Riverpod providers for the AlyPlayer application.
 library;
 
+import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 import 'package:aly_player/core/database/database.dart';
 import 'package:aly_player/core/services/player_service.dart';
@@ -57,6 +59,37 @@ final subscriptionServiceProvider = Provider<SubscriptionService>((ref) {
   ref.onDispose(() => service.dispose());
   return service;
 });
+
+// ─── Locale ──────────────────────────────────────────────────
+
+/// App locale override. `null` means follow system default.
+final localeProvider = StateNotifierProvider<LocaleNotifier, Locale?>((ref) {
+  return LocaleNotifier();
+});
+
+class LocaleNotifier extends StateNotifier<Locale?> {
+  LocaleNotifier() : super(null) {
+    _load();
+  }
+
+  Future<void> _load() async {
+    final prefs = await SharedPreferences.getInstance();
+    final code = prefs.getString('app_locale');
+    if (code != null) {
+      state = Locale(code);
+    }
+  }
+
+  Future<void> setLocale(Locale? locale) async {
+    state = locale;
+    final prefs = await SharedPreferences.getInstance();
+    if (locale == null) {
+      await prefs.remove('app_locale');
+    } else {
+      await prefs.setString('app_locale', locale.languageCode);
+    }
+  }
+}
 
 // ─── Reactive Data Streams ───────────────────────────────────
 

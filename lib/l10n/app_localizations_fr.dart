@@ -412,4 +412,16 @@ class AppLocalizationsFr extends AppLocalizations {
 
   @override
   String get off => 'Désactivé';
+
+  @override
+  String get audioTrack => 'Piste audio';
+
+  @override
+  String get language => 'Langue';
+
+  @override
+  String get english => 'English';
+
+  @override
+  String get french => 'Français';
 }

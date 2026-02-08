@@ -13,6 +13,7 @@ class SettingsScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final l10n = AppLocalizations.of(context)!;
     final theme = Theme.of(context);
+    final currentLocale = ref.watch(localeProvider);
 
     return Scaffold(
       appBar: AppBar(title: Text(l10n.settings)),
@@ -46,6 +47,12 @@ class SettingsScreen extends ConsumerWidget {
             title: Text(l10n.theme),
             subtitle: Text(l10n.systemDefault),
             onTap: () => _showThemePicker(context),
+          ),
+          ListTile(
+            leading: const Icon(Icons.language),
+            title: Text(l10n.language),
+            subtitle: Text(_localeDisplayName(currentLocale, l10n)),
+            onTap: () => _showLanguagePicker(context, ref),
           ),
 
           // ─── Subscription ───
@@ -98,6 +105,48 @@ class SettingsScreen extends ConsumerWidget {
           ),
 
           const SizedBox(height: 32),
+        ],
+      ),
+    );
+  }
+
+  String _localeDisplayName(Locale? locale, AppLocalizations l10n) {
+    if (locale == null) return l10n.systemDefault;
+    return switch (locale.languageCode) {
+      'en' => l10n.english,
+      'fr' => l10n.french,
+      _ => l10n.systemDefault,
+    };
+  }
+
+  void _showLanguagePicker(BuildContext context, WidgetRef ref) {
+    final l10n = AppLocalizations.of(context)!;
+    showDialog(
+      context: context,
+      builder: (ctx) => SimpleDialog(
+        title: Text(l10n.language),
+        children: [
+          SimpleDialogOption(
+            onPressed: () {
+              ref.read(localeProvider.notifier).setLocale(null);
+              Navigator.pop(ctx);
+            },
+            child: Text(l10n.systemDefault),
+          ),
+          SimpleDialogOption(
+            onPressed: () {
+              ref.read(localeProvider.notifier).setLocale(const Locale('en'));
+              Navigator.pop(ctx);
+            },
+            child: Text(l10n.english),
+          ),
+          SimpleDialogOption(
+            onPressed: () {
+              ref.read(localeProvider.notifier).setLocale(const Locale('fr'));
+              Navigator.pop(ctx);
+            },
+            child: Text(l10n.french),
+          ),
         ],
       ),
     );

@@ -164,5 +164,9 @@
   "sortByRecent": "Sort by Recent",
   "sortByGroup": "Sort by Group",
   "subtitles": "Subtitles",
-  "off": "Off"
+  "off": "Off",
+  "audioTrack": "Audio Track",
+  "language": "Language",
+  "english": "English",
+  "french": "French"
 }
