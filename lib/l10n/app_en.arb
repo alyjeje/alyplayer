@@ -162,5 +162,7 @@
   "categoryAll": "All",
   "sortByName": "Sort by Name",
   "sortByRecent": "Sort by Recent",
-  "sortByGroup": "Sort by Group"
+  "sortByGroup": "Sort by Group",
+  "subtitles": "Subtitles",
+  "off": "Off"
 }

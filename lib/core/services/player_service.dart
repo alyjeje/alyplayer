@@ -126,6 +126,34 @@ class PlayerService {
     await _player.seek(position);
   }
 
+  /// Seeks forward by [seconds] from the current position.
+  Future<void> seekForward([int seconds = 10]) async {
+    final current = _player.state.position;
+    final duration = _player.state.duration;
+    final target = current + Duration(seconds: seconds);
+    await _player.seek(target > duration ? duration : target);
+  }
+
+  /// Seeks backward by [seconds] from the current position.
+  Future<void> seekBackward([int seconds = 10]) async {
+    final current = _player.state.position;
+    final target = current - Duration(seconds: seconds);
+    await _player.seek(target < Duration.zero ? Duration.zero : target);
+  }
+
+  /// Returns the list of available subtitle tracks.
+  List<SubtitleTrack> get subtitleTracks => _player.state.tracks.subtitle;
+
+  /// Sets the active subtitle track.
+  Future<void> setSubtitleTrack(SubtitleTrack track) async {
+    await _player.setSubtitleTrack(track);
+  }
+
+  /// Disables subtitles.
+  Future<void> disableSubtitles() async {
+    await _player.setSubtitleTrack(SubtitleTrack.no());
+  }
+
   /// Sets the playback speed [rate] (e.g. 1.0 for normal, 2.0 for double).
   Future<void> setRate(double rate) async {
     await _player.setRate(rate);

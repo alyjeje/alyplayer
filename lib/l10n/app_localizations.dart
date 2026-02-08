@@ -853,6 +853,18 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Sort by Group'**
   String get sortByGroup;
+
+  /// No description provided for @subtitles.
+  ///
+  /// In en, this message translates to:
+  /// **'Subtitles'**
+  String get subtitles;
+
+  /// No description provided for @off.
+  ///
+  /// In en, this message translates to:
+  /// **'Off'**
+  String get off;
 }
 
 class _AppLocalizationsDelegate

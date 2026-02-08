@@ -406,4 +406,10 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get sortByGroup => 'Sort by Group';
+
+  @override
+  String get subtitles => 'Subtitles';
+
+  @override
+  String get off => 'Off';
 }

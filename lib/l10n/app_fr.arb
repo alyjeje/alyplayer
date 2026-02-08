@@ -162,5 +162,7 @@
   "categoryAll": "Tout",
   "sortByName": "Trier par nom",
   "sortByRecent": "Trier par récent",
-  "sortByGroup": "Trier par groupe"
+  "sortByGroup": "Trier par groupe",
+  "subtitles": "Sous-titres",
+  "off": "Désactivé"
 }
