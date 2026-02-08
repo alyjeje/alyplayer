@@ -70,7 +70,7 @@ class XtreamService {
       final liveChannels = await _fetchLiveStreams(credentials);
       if (liveChannels.isNotEmpty) {
         await _db.insertChannelsBatch(
-          _buildCompanions(liveChannels, playlist.id, 'live'),
+          _buildCompanions(liveChannels, playlist.id, 'live', credentials),
         );
       }
 
@@ -78,7 +78,7 @@ class XtreamService {
       final vodChannels = await _fetchVodStreams(credentials);
       if (vodChannels.isNotEmpty) {
         await _db.insertChannelsBatch(
-          _buildCompanions(vodChannels, playlist.id, 'movie'),
+          _buildCompanions(vodChannels, playlist.id, 'movie', credentials),
         );
       }
 
@@ -130,14 +130,14 @@ class XtreamService {
       final liveChannels = await _fetchLiveStreams(credentials);
       if (liveChannels.isNotEmpty) {
         await _db.insertChannelsBatch(
-          _buildCompanions(liveChannels, playlistId, 'live'),
+          _buildCompanions(liveChannels, playlistId, 'live', credentials),
         );
       }
 
       final vodChannels = await _fetchVodStreams(credentials);
       if (vodChannels.isNotEmpty) {
         await _db.insertChannelsBatch(
-          _buildCompanions(vodChannels, playlistId, 'movie'),
+          _buildCompanions(vodChannels, playlistId, 'movie', credentials),
         );
       }
 
@@ -262,6 +262,7 @@ class XtreamService {
     List<_XtreamStream> streams,
     int playlistId,
     String contentType,
+    XtreamCredentials creds,
   ) {
     return [
       for (var i = 0; i < streams.length; i++)
@@ -269,8 +270,8 @@ class XtreamService {
           uuid: _uuid.v4(),
           name: streams[i].name,
           streamUrl: contentType == 'live'
-              ? streams[i].id // will be resolved via player
-              : streams[i].id,
+              ? creds.liveStreamUrl(streams[i].id)
+              : creds.vodStreamUrl(streams[i].id, streams[i].containerExtension ?? 'mp4'),
           logoUrl: Value(streams[i].logoUrl),
           groupTitle: Value(streams[i].groupTitle),
           contentType: Value(contentType),
