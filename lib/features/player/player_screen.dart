@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:io';
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -356,6 +357,28 @@ class _PlayerScreenState extends ConsumerState<PlayerScreen> {
                         tooltip: l10n.subtitles,
                         onPressed: _showSubtitlePicker,
                       ),
+                      // PiP button (iOS only)
+                      if (Platform.isIOS)
+                        FutureBuilder<bool>(
+                          future: playerService.isPiPSupported,
+                          builder: (context, snapshot) {
+                            if (snapshot.data != true) return const SizedBox.shrink();
+                            return IconButton(
+                              icon: const Icon(
+                                Icons.picture_in_picture_alt,
+                                color: Colors.white,
+                              ),
+                              tooltip: 'Picture in Picture',
+                              onPressed: () async {
+                                final nav = Navigator.of(context);
+                                final success = await playerService.startPiP();
+                                if (success && mounted) {
+                                  nav.pop();
+                                }
+                              },
+                            );
+                          },
+                        ),
                       // Cast button
                       IconButton(
                         icon: const Icon(Icons.cast, color: Colors.white),

@@ -12,6 +12,7 @@ import 'package:media_kit_video/media_kit_video.dart';
 
 import 'package:aly_player/core/database/database.dart';
 import 'package:aly_player/core/models/dtos.dart';
+import 'package:aly_player/core/services/pip_service.dart';
 
 /// Service that wraps a media_kit [Player] and [VideoController], exposing a
 /// simplified, reactive API for the UI layer.
@@ -28,6 +29,7 @@ class PlayerService {
   }
 
   final AppDatabase? _db;
+  final PiPService _pipService = PiPService();
 
   late final Player _player;
   late final VideoController _videoController;
@@ -178,6 +180,58 @@ class PlayerService {
     await _player.setRate(rate);
   }
 
+  /// Whether PiP is supported on this device.
+  Future<bool> get isPiPSupported => _pipService.isSupported;
+
+  /// Activate Picture-in-Picture mode.
+  ///
+  /// Pauses media_kit, hands the stream URL to native AVPlayer for PiP,
+  /// and resumes media_kit when PiP ends.
+  Future<bool> startPiP() async {
+    final channel = _currentChannel;
+    if (channel == null) return false;
+
+    final position = _player.state.position.inMilliseconds / 1000.0;
+
+    _pipService.onPiPStarted = () {
+      _player.pause();
+    };
+
+    _pipService.onPiPStopped = (positionSeconds) {
+      final resumePosition = Duration(
+        milliseconds: (positionSeconds * 1000).round(),
+      );
+      _player.seek(resumePosition);
+      _player.play();
+    };
+
+    _pipService.onPiPRestoreUI = (positionSeconds) {
+      final resumePosition = Duration(
+        milliseconds: (positionSeconds * 1000).round(),
+      );
+      _player.seek(resumePosition);
+      _player.play();
+    };
+
+    _pipService.onPiPError = (_) {
+      _player.play();
+    };
+
+    return _pipService.startPiP(
+      url: channel.streamUrl,
+      positionSeconds: position,
+      headers: {
+        'User-Agent': 'AlyPlayer/1.0',
+        'Connection': 'keep-alive',
+      },
+    );
+  }
+
+  /// Stop Picture-in-Picture mode.
+  Future<void> stopPiP() async {
+    await _pipService.stopPiP();
+  }
+
   /// Releases all resources held by this service.
   ///
   /// After calling dispose, this instance must not be used again.
@@ -189,6 +243,7 @@ class PlayerService {
     }
     _subscriptions.clear();
 
+    _pipService.dispose();
     await _stateController.close();
     await _player.dispose();
   }

@@ -8,6 +8,12 @@ import UIKit
     didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]?
   ) -> Bool {
     GeneratedPluginRegistrant.register(with: self)
+
+    // Register PiP platform channel
+    if let controller = window?.rootViewController as? FlutterViewController {
+      PiPManager.shared.register(with: controller.binaryMessenger)
+    }
+
     return super.application(application, didFinishLaunchingWithOptions: launchOptions)
   }
 }
