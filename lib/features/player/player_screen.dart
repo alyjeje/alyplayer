@@ -379,19 +379,16 @@ class _PlayerScreenState extends ConsumerState<PlayerScreen> {
                             );
                           },
                         ),
-                      // Cast button
-                      IconButton(
-                        icon: const Icon(Icons.cast, color: Colors.white),
-                        tooltip: 'AirPlay',
-                        onPressed: () {
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(
-                              content: Text('AirPlay coming soon'),
-                              duration: Duration(seconds: 2),
-                            ),
-                          );
-                        },
-                      ),
+                      // AirPlay button (iOS only)
+                      if (Platform.isIOS)
+                        IconButton(
+                          icon: const Icon(Icons.airplay, color: Colors.white),
+                          tooltip: 'AirPlay',
+                          onPressed: () {
+                            const MethodChannel('com.alyplayer/airplay')
+                                .invokeMethod('showRoutePicker');
+                          },
+                        ),
                     ],
                   ),
                   const Spacer(),

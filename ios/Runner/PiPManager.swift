@@ -2,20 +2,20 @@ import AVKit
 import AVFoundation
 import Flutter
 
-/// Manages Picture-in-Picture using a native AVPlayer for iOS.
-/// When PiP is requested, this class creates a hidden AVPlayerViewController,
-/// loads the same stream URL that media_kit is playing, and activates PiP.
-/// When PiP ends, Flutter is notified so media_kit can resume.
+/// Manages Picture-in-Picture using a native AVPlayer + AVPlayerLayer for iOS.
+/// Creates a dedicated AVPlayerLayer (not relying on AVPlayerViewController's internal hierarchy).
 class PiPManager: NSObject {
     static let shared = PiPManager()
 
     private var pipController: AVPictureInPictureController?
-    private var playerViewController: AVPlayerViewController?
     private var avPlayer: AVPlayer?
+    private var playerLayer: AVPlayerLayer?
+    private var containerView: UIView?
     private var methodChannel: FlutterMethodChannel?
 
     private var currentUrl: String?
     private var isPiPActive = false
+    private var pendingResult: FlutterResult?
 
     private override init() {
         super.init()
@@ -46,8 +46,7 @@ class PiPManager: NSObject {
                     return
                 }
                 let position = args["positionSeconds"] as? Double ?? 0.0
-                let headers = args["headers"] as? [String: String]
-                self.startPiP(url: url, positionSeconds: position, headers: headers, result: result)
+                self.startPiP(url: url, positionSeconds: position, result: result)
 
             case "stopPiP":
                 self.stopPiP(result: result)
@@ -73,7 +72,7 @@ class PiPManager: NSObject {
         }
     }
 
-    // MARK: - Key Window helper (iOS 15+ safe)
+    // MARK: - Key Window
 
     private func getKeyWindow() -> UIWindow? {
         return UIApplication.shared.connectedScenes
@@ -84,80 +83,85 @@ class PiPManager: NSObject {
 
     // MARK: - Start PiP
 
-    private func startPiP(url: String, positionSeconds: Double, headers: [String: String]?, result: @escaping FlutterResult) {
+    private func startPiP(url: String, positionSeconds: Double, result: @escaping FlutterResult) {
         guard AVPictureInPictureController.isPictureInPictureSupported() else {
-            result(FlutterError(code: "UNSUPPORTED", message: "PiP not supported on this device", details: nil))
+            result(FlutterError(code: "UNSUPPORTED", message: "PiP not supported", details: nil))
             return
         }
 
+        // Clean up any previous session
+        cleanupNativePlayer()
         configureAudioSession()
         currentUrl = url
 
         // Create AVPlayer
-        let asset = AVURLAsset(url: URL(string: url)!)
+        guard let videoURL = URL(string: url) else {
+            result(FlutterError(code: "INVALID_URL", message: "Invalid URL", details: nil))
+            return
+        }
+
+        let asset = AVURLAsset(url: videoURL)
         let playerItem = AVPlayerItem(asset: asset)
-        avPlayer = AVPlayer(playerItem: playerItem)
+        let player = AVPlayer(playerItem: playerItem)
+        avPlayer = player
 
-        // Seek to current position if VOD
+        // Seek to position for VOD
         if positionSeconds > 0 {
-            let seekTime = CMTime(seconds: positionSeconds, preferredTimescale: 1000)
-            avPlayer?.seek(to: seekTime)
+            player.seek(to: CMTime(seconds: positionSeconds, preferredTimescale: 1000))
         }
 
-        // Create AVPlayerViewController (hidden -- used only for PiP)
-        let playerVC = AVPlayerViewController()
-        playerVC.player = avPlayer
-        playerVC.allowsPictureInPicturePlayback = true
-        if #available(iOS 14.2, *) {
-            playerVC.canStartPictureInPictureAutomaticallyFromInline = true
+        // Create our OWN AVPlayerLayer (not searching for one inside AVPlayerViewController)
+        let layer = AVPlayerLayer(player: player)
+        layer.frame = CGRect(x: 0, y: 0, width: 2, height: 2)
+        layer.videoGravity = .resizeAspect
+        playerLayer = layer
+
+        // Attach to a small container view in the window
+        let container = UIView(frame: CGRect(x: -10, y: -10, width: 2, height: 2))
+        container.layer.addSublayer(layer)
+        containerView = container
+
+        if let window = getKeyWindow() {
+            window.addSubview(container)
         }
 
-        // Add to view hierarchy (required for PiP to work)
-        if let rootVC = getKeyWindow()?.rootViewController {
-            playerVC.view.frame = CGRect(x: 0, y: 0, width: 1, height: 1)
-            playerVC.view.alpha = 0.01
-            rootVC.view.addSubview(playerVC.view)
-            rootVC.addChild(playerVC)
-            playerVC.didMove(toParent: rootVC)
+        // Start playback
+        player.play()
+
+        // Create PiP controller from our dedicated layer
+        guard let pipCtrl = AVPictureInPictureController(playerLayer: layer) else {
+            result(FlutterError(code: "PIP_FAILED", message: "Could not create PiP controller", details: nil))
+            cleanupNativePlayer()
+            return
         }
+        pipCtrl.delegate = self
+        pipController = pipCtrl
 
-        playerViewController = playerVC
-        avPlayer?.play()
+        // Wait for the player to buffer, then start PiP
+        pendingResult = result
+        DispatchQueue.main.asyncAfter(deadline: .now() + 1.0) { [weak self] in
+            guard let self = self, let pending = self.pendingResult else { return }
+            self.pendingResult = nil
 
-        // Wait for player to initialize, then start PiP
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) { [weak self] in
-            guard let self = self else { return }
-
-            if let playerLayer = self.findPlayerLayer(in: playerVC.view.layer),
-               let pipCtrl = AVPictureInPictureController(playerLayer: playerLayer) {
-                pipCtrl.delegate = self
-                self.pipController = pipCtrl
-
-                DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
+            if pipCtrl.isPictureInPicturePossible {
+                pipCtrl.startPictureInPicture()
+                pending(true)
+            } else {
+                // Retry once more after a longer delay
+                self.pendingResult = pending
+                DispatchQueue.main.asyncAfter(deadline: .now() + 1.5) { [weak self] in
+                    guard let self = self, let pending2 = self.pendingResult else { return }
+                    self.pendingResult = nil
                     if pipCtrl.isPictureInPicturePossible {
                         pipCtrl.startPictureInPicture()
-                        self.isPiPActive = true
-                        result(true)
+                        pending2(true)
                     } else {
-                        result(FlutterError(code: "PIP_FAILED", message: "PiP not possible", details: nil))
+                        pending2(FlutterError(code: "PIP_FAILED", message: "PiP not possible after retry", details: nil))
+                        self.cleanupNativePlayer()
                     }
                 }
-            } else {
-                result(FlutterError(code: "PIP_FAILED", message: "Could not find player layer or create PiP controller", details: nil))
             }
         }
-    }
-
-    private func findPlayerLayer(in layer: CALayer) -> AVPlayerLayer? {
-        if let playerLayer = layer as? AVPlayerLayer {
-            return playerLayer
-        }
-        for sublayer in layer.sublayers ?? [] {
-            if let found = findPlayerLayer(in: sublayer) {
-                return found
-            }
-        }
-        return nil
     }
 
     // MARK: - Stop PiP
@@ -172,19 +176,22 @@ class PiPManager: NSObject {
         avPlayer?.pause()
         avPlayer = nil
 
-        playerViewController?.willMove(toParent: nil)
-        playerViewController?.view.removeFromSuperview()
-        playerViewController?.removeFromParent()
-        playerViewController = nil
+        playerLayer?.removeFromSuperlayer()
+        playerLayer = nil
+
+        containerView?.removeFromSuperview()
+        containerView = nil
 
         pipController = nil
         isPiPActive = false
         currentUrl = nil
+        pendingResult = nil
     }
 
     private func getCurrentPosition() -> Double {
         guard let player = avPlayer else { return 0.0 }
-        return CMTimeGetSeconds(player.currentTime())
+        let time = player.currentTime()
+        return time.isValid ? CMTimeGetSeconds(time) : 0.0
     }
 }
 
@@ -214,6 +221,7 @@ extension PiPManager: AVPictureInPictureControllerDelegate {
         _ pictureInPictureController: AVPictureInPictureController,
         failedToStartPictureInPictureWithError error: Error
     ) {
+        print("[PiPManager] Failed to start PiP: \(error)")
         isPiPActive = false
         methodChannel?.invokeMethod("onPiPError", arguments: [
             "error": error.localizedDescription

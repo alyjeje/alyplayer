@@ -9,9 +9,10 @@ import UIKit
   ) -> Bool {
     GeneratedPluginRegistrant.register(with: self)
 
-    // Register PiP platform channel
+    // Register platform channels
     if let controller = window?.rootViewController as? FlutterViewController {
       PiPManager.shared.register(with: controller.binaryMessenger)
+      AirPlayManager.shared.register(with: controller.binaryMessenger)
     }
 
     return super.application(application, didFinishLaunchingWithOptions: launchOptions)
