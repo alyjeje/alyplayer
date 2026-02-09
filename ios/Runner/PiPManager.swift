@@ -128,8 +128,8 @@ class PiPManager: NSObject {
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) { [weak self] in
             guard let self = self else { return }
 
-            if let playerLayer = self.findPlayerLayer(in: playerVC.view.layer) {
-                let pipCtrl = AVPictureInPictureController(playerLayer: playerLayer)
+            if let playerLayer = self.findPlayerLayer(in: playerVC.view.layer),
+               let pipCtrl = AVPictureInPictureController(playerLayer: playerLayer) {
                 pipCtrl.delegate = self
                 self.pipController = pipCtrl
 
@@ -143,7 +143,7 @@ class PiPManager: NSObject {
                     }
                 }
             } else {
-                result(FlutterError(code: "PIP_FAILED", message: "Could not find player layer", details: nil))
+                result(FlutterError(code: "PIP_FAILED", message: "Could not find player layer or create PiP controller", details: nil))
             }
         }
     }
