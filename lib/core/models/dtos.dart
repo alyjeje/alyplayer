@@ -322,7 +322,7 @@ class XtreamCredentials {
   String get apiUrl => '$_baseUrl/player_api.php';
 
   /// Build a live stream URL.
-  String liveStreamUrl(String streamId) => '$_baseUrl/$username/$password/$streamId';
+  String liveStreamUrl(String streamId) => '$_baseUrl/live/$username/$password/$streamId.ts';
 
   /// Build a VOD stream URL.
   String vodStreamUrl(String streamId, String ext) =>

@@ -20,6 +20,7 @@ class PlayerService {
     _player = Player(
       configuration: const PlayerConfiguration(
         bufferSize: 32 * 1024 * 1024, // 32 MB buffer for live streams
+        logLevel: MPVLogLevel.warn,
       ),
     );
     _videoController = VideoController(_player);
@@ -96,7 +97,13 @@ class PlayerService {
     _addToHistory(channel);
     _setState(AppPlayerState.loading);
 
-    await _player.open(Media(channel.streamUrl));
+    await _player.open(Media(
+      channel.streamUrl,
+      httpHeaders: {
+        'User-Agent': 'AlyPlayer/1.0',
+        'Connection': 'keep-alive',
+      },
+    ));
 
     // Update last-watched timestamp in the database.
     _db?.updateLastWatched(channel.id);
@@ -270,7 +277,13 @@ class PlayerService {
       final channel = _currentChannel;
       if (channel != null && _playerState != AppPlayerState.failed) {
         _setState(AppPlayerState.loading);
-        _player.open(Media(channel.streamUrl));
+        _player.open(Media(
+          channel.streamUrl,
+          httpHeaders: {
+            'User-Agent': 'AlyPlayer/1.0',
+            'Connection': 'keep-alive',
+          },
+        ));
       }
     });
   }
