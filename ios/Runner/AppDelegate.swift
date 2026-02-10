@@ -18,6 +18,11 @@ import UIKit
       AirPlayManager.shared.register(with: controller.binaryMessenger)
       NativeVideoPlayer.shared.register(with: controller.binaryMessenger)
       NativeVideoPlayer.shared.setRootViewController(controller)
+
+      // Register inline native player PlatformView (UiKitView)
+      let factory = NativePlayerViewFactory(messenger: controller.binaryMessenger)
+      registrar(forPlugin: "NativePlayerViewPlugin")!
+        .register(factory, withId: "native_player_view")
     }
 
     return super.application(application, didFinishLaunchingWithOptions: launchOptions)
