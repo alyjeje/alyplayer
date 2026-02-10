@@ -3,7 +3,7 @@ import AVFoundation
 import Flutter
 
 /// Manages Picture-in-Picture using a native AVPlayer + AVPlayerLayer for iOS.
-/// The AVPlayerLayer must be properly sized and on-screen for iOS to create the PiP window.
+/// The AVPlayerLayer must be properly sized and visible for iOS to render PiP frames.
 class PiPManager: NSObject {
     static let shared = PiPManager()
 
@@ -17,6 +17,7 @@ class PiPManager: NSObject {
     private var isPiPActive = false
     private var pendingResult: FlutterResult?
     private var statusObservation: NSKeyValueObservation?
+    private var possibleObservation: NSKeyValueObservation?
 
     private override init() {
         super.init()
@@ -63,7 +64,9 @@ class PiPManager: NSObject {
 
     // MARK: - Audio Session
 
-    private func configureAudioSession() {
+    /// Configure audio session for background playback.
+    /// Called both at app launch and before PiP.
+    static func configureAudioSession() {
         do {
             let session = AVAudioSession.sharedInstance()
             try session.setCategory(.playback, mode: .moviePlayback, options: [])
@@ -92,7 +95,7 @@ class PiPManager: NSObject {
 
         // Clean up any previous session
         cleanupNativePlayer()
-        configureAudioSession()
+        PiPManager.configureAudioSession()
         currentUrl = url
 
         // Create AVPlayer
@@ -104,6 +107,7 @@ class PiPManager: NSObject {
         let asset = AVURLAsset(url: videoURL)
         let playerItem = AVPlayerItem(asset: asset)
         let player = AVPlayer(playerItem: playerItem)
+        player.allowsExternalPlayback = true
         avPlayer = player
 
         // Seek to position for VOD
@@ -111,49 +115,50 @@ class PiPManager: NSObject {
             player.seek(to: CMTime(seconds: positionSeconds, preferredTimescale: 1000))
         }
 
-        // Create AVPlayerLayer with a PROPER size — iOS requires a real-sized layer
-        // to render video frames for PiP
+        // Create AVPlayerLayer with proper size — iOS REQUIRES the layer to be
+        // visible and rendering frames for PiP to show a window
         let layer = AVPlayerLayer(player: player)
-        layer.frame = CGRect(x: 0, y: 0, width: 320, height: 180)
         layer.videoGravity = .resizeAspect
         playerLayer = layer
 
-        // Container view: on-screen, small but properly sized
-        // Positioned at bottom-right corner, will be hidden once PiP starts
         guard let window = getKeyWindow() else {
             result(FlutterError(code: "NO_WINDOW", message: "No key window", details: nil))
             cleanupNativePlayer()
             return
         }
 
+        // Container: full screen size, inserted BEHIND the Flutter view
+        // so it's not visible to the user, but iOS still renders the layer
         let screenBounds = window.bounds
-        let container = UIView(frame: CGRect(
-            x: screenBounds.width - 322,
-            y: screenBounds.height - 182,
-            width: 320,
-            height: 180
-        ))
-        container.clipsToBounds = true
-        // Semi-transparent so it's barely visible but iOS considers it "on screen"
-        container.alpha = 0.01
+        let container = UIView(frame: screenBounds)
+        container.backgroundColor = .black
+        layer.frame = container.bounds
         container.layer.addSublayer(layer)
         containerView = container
-        window.addSubview(container)
 
-        // Start playback immediately
+        // Insert at index 0 = behind Flutter's view
+        window.insertSubview(container, at: 0)
+
+        // Start playback
         player.play()
 
-        // Create PiP controller from the properly-sized layer
+        // Create PiP controller
         guard let pipCtrl = AVPictureInPictureController(playerLayer: layer) else {
             result(FlutterError(code: "PIP_FAILED", message: "Could not create PiP controller", details: nil))
             cleanupNativePlayer()
             return
         }
         pipCtrl.delegate = self
-        pipController = pipCtrl
 
-        // Use KVO to observe when the player item is ready to play
+        // Enable automatic PiP when app goes to background (iOS 14.2+)
+        if #available(iOS 14.2, *) {
+            pipCtrl.canStartPictureInPictureAutomaticallyFromInline = true
+        }
+
+        pipController = pipCtrl
         pendingResult = result
+
+        // Wait for player item to be ready, then start PiP
         statusObservation = playerItem.observe(\.status, options: [.new]) { [weak self] item, _ in
             guard let self = self else { return }
 
@@ -162,7 +167,9 @@ class PiPManager: NSObject {
                 case .readyToPlay:
                     self.statusObservation?.invalidate()
                     self.statusObservation = nil
-                    self.attemptStartPiP(pipCtrl: pipCtrl)
+                    // Bring container to front so layer renders visible frames
+                    window.bringSubviewToFront(container)
+                    self.waitForPiPPossibleThenStart(pipCtrl: pipCtrl)
 
                 case .failed:
                     self.statusObservation?.invalidate()
@@ -189,53 +196,38 @@ class PiPManager: NSObject {
             self.pendingResult = nil
             self.statusObservation?.invalidate()
             self.statusObservation = nil
+            self.possibleObservation?.invalidate()
+            self.possibleObservation = nil
             pending(FlutterError(code: "TIMEOUT", message: "Player not ready after 10s", details: nil))
             self.cleanupNativePlayer()
         }
     }
 
-    private func attemptStartPiP(pipCtrl: AVPictureInPictureController) {
-        // Try to start PiP — may need a short delay for the layer to render a frame
+    /// Use KVO on isPictureInPicturePossible to know exactly when we can start PiP
+    private func waitForPiPPossibleThenStart(pipCtrl: AVPictureInPictureController) {
         if pipCtrl.isPictureInPicturePossible {
-            pipCtrl.startPictureInPicture()
-            if let pending = pendingResult {
-                pendingResult = nil
-                pending(true)
-            }
-        } else {
-            // Retry after a short delay (layer may need a moment to render)
-            DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) { [weak self] in
-                guard let self = self else { return }
-                if pipCtrl.isPictureInPicturePossible {
-                    pipCtrl.startPictureInPicture()
-                    if let pending = self.pendingResult {
-                        self.pendingResult = nil
-                        pending(true)
-                    }
-                } else {
-                    // One more retry after 1.5s total
-                    DispatchQueue.main.asyncAfter(deadline: .now() + 1.0) { [weak self] in
-                        guard let self = self else { return }
-                        if pipCtrl.isPictureInPicturePossible {
-                            pipCtrl.startPictureInPicture()
-                            if let pending = self.pendingResult {
-                                self.pendingResult = nil
-                                pending(true)
-                            }
-                        } else {
-                            if let pending = self.pendingResult {
-                                self.pendingResult = nil
-                                pending(FlutterError(
-                                    code: "PIP_FAILED",
-                                    message: "PiP not possible after retries",
-                                    details: nil
-                                ))
-                            }
-                            self.cleanupNativePlayer()
-                        }
-                    }
+            startPiPNow(pipCtrl: pipCtrl)
+            return
+        }
+
+        // Observe isPictureInPicturePossible
+        possibleObservation = pipCtrl.observe(\.isPictureInPicturePossible, options: [.new]) { [weak self] ctrl, change in
+            guard let self = self else { return }
+            DispatchQueue.main.async {
+                if ctrl.isPictureInPicturePossible {
+                    self.possibleObservation?.invalidate()
+                    self.possibleObservation = nil
+                    self.startPiPNow(pipCtrl: ctrl)
                 }
             }
+        }
+    }
+
+    private func startPiPNow(pipCtrl: AVPictureInPictureController) {
+        pipCtrl.startPictureInPicture()
+        if let pending = pendingResult {
+            pendingResult = nil
+            pending(true)
         }
     }
 
@@ -250,6 +242,8 @@ class PiPManager: NSObject {
     private func cleanupNativePlayer() {
         statusObservation?.invalidate()
         statusObservation = nil
+        possibleObservation?.invalidate()
+        possibleObservation = nil
 
         avPlayer?.pause()
         avPlayer = nil
@@ -281,8 +275,8 @@ extension PiPManager: AVPictureInPictureControllerDelegate {
         _ pictureInPictureController: AVPictureInPictureController
     ) {
         isPiPActive = true
-        // Once PiP starts, make the container fully invisible
-        containerView?.alpha = 0.0
+        // PiP window is now taking over — hide the container
+        containerView?.isHidden = true
         methodChannel?.invokeMethod("onPiPStarted", arguments: nil)
     }
 

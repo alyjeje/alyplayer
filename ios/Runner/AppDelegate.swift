@@ -9,6 +9,9 @@ import UIKit
   ) -> Bool {
     GeneratedPluginRegistrant.register(with: self)
 
+    // Configure audio session for background playback (required for PiP and background audio)
+    PiPManager.configureAudioSession()
+
     // Register platform channels
     if let controller = window?.rootViewController as? FlutterViewController {
       PiPManager.shared.register(with: controller.binaryMessenger)

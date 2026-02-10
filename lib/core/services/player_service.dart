@@ -185,16 +185,19 @@ class PlayerService {
 
   /// Activate Picture-in-Picture mode.
   ///
-  /// Pauses media_kit, hands the stream URL to native AVPlayer for PiP,
-  /// and resumes media_kit when PiP ends.
+  /// Pauses media_kit FIRST to avoid double audio, hands the stream URL to
+  /// native AVPlayer for PiP, and resumes media_kit when PiP ends.
   Future<bool> startPiP() async {
     final channel = _currentChannel;
     if (channel == null) return false;
 
     final position = _player.state.position.inMilliseconds / 1000.0;
 
+    // Pause media_kit BEFORE starting native player to avoid double audio
+    await _player.pause();
+
     _pipService.onPiPStarted = () {
-      _player.pause();
+      // media_kit already paused — native AVPlayer is handling playback
     };
 
     _pipService.onPiPStopped = (positionSeconds) {
@@ -214,10 +217,11 @@ class PlayerService {
     };
 
     _pipService.onPiPError = (_) {
+      // PiP failed — resume media_kit playback
       _player.play();
     };
 
-    return _pipService.startPiP(
+    final success = await _pipService.startPiP(
       url: channel.streamUrl,
       positionSeconds: position,
       headers: {
@@ -225,6 +229,13 @@ class PlayerService {
         'Connection': 'keep-alive',
       },
     );
+
+    if (!success) {
+      // PiP failed to start — resume media_kit
+      await _player.play();
+    }
+
+    return success;
   }
 
   /// Stop Picture-in-Picture mode.
