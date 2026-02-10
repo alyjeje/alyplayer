@@ -7,6 +7,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:media_kit_video/media_kit_video.dart';
 
 import '../../core/providers/providers.dart';
+import '../../core/services/native_player_service.dart';
 import '../../l10n/app_localizations.dart';
 
 class PlayerScreen extends ConsumerStatefulWidget {
@@ -25,19 +26,69 @@ class _PlayerScreenState extends ConsumerState<PlayerScreen> {
   Offset? _doubleTapPosition;
   _SeekDirection? _seekDirection;
 
+  // iOS native player
+  NativePlayerService? _nativePlayer;
+  bool _useNativePlayer = false;
+
   @override
   void initState() {
     super.initState();
-    _loadChannel();
-    // Force landscape fullscreen
-    SystemChrome.setPreferredOrientations([
-      DeviceOrientation.landscapeLeft,
-      DeviceOrientation.landscapeRight,
-    ]);
-    SystemChrome.setEnabledSystemUIMode(SystemUiMode.immersiveSticky);
-    _startHideTimer();
+
+    if (Platform.isIOS) {
+      // iOS: use native AVPlayerViewController for PiP/AirPlay support
+      _useNativePlayer = true;
+      _presentNativePlayer();
+    } else {
+      // Android: use media_kit with custom controls
+      _loadChannel();
+      SystemChrome.setPreferredOrientations([
+        DeviceOrientation.landscapeLeft,
+        DeviceOrientation.landscapeRight,
+      ]);
+      SystemChrome.setEnabledSystemUIMode(SystemUiMode.immersiveSticky);
+      _startHideTimer();
+    }
   }
 
+  /// iOS: Load channel info, present native AVPlayerViewController, then pop.
+  Future<void> _presentNativePlayer() async {
+    try {
+      final db = ref.read(databaseProvider);
+      final channel = await db.getChannelById(widget.channelId);
+      if (channel == null) {
+        if (mounted) Navigator.of(context).pop();
+        return;
+      }
+
+      _nativePlayer = NativePlayerService();
+
+      // When native player is dismissed (user taps Done), pop this screen
+      _nativePlayer!.onDismissed = (_) {
+        if (mounted) Navigator.of(context).pop();
+      };
+
+      final success = await _nativePlayer!.presentPlayer(
+        url: channel.streamUrl,
+        title: channel.name,
+      );
+
+      if (!success && mounted) {
+        // Fallback to media_kit if native player fails
+        setState(() => _useNativePlayer = false);
+        _loadChannel();
+        SystemChrome.setPreferredOrientations([
+          DeviceOrientation.landscapeLeft,
+          DeviceOrientation.landscapeRight,
+        ]);
+        SystemChrome.setEnabledSystemUIMode(SystemUiMode.immersiveSticky);
+        _startHideTimer();
+      }
+    } catch (e) {
+      if (mounted) Navigator.of(context).pop();
+    }
+  }
+
+  /// Android: Load channel into media_kit player.
   Future<void> _loadChannel() async {
     try {
       final db = ref.read(databaseProvider);
@@ -65,8 +116,11 @@ class _PlayerScreenState extends ConsumerState<PlayerScreen> {
   @override
   void dispose() {
     _hideTimer?.cancel();
-    SystemChrome.setPreferredOrientations([DeviceOrientation.portraitUp]);
-    SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
+    _nativePlayer?.dispose();
+    if (!_useNativePlayer) {
+      SystemChrome.setPreferredOrientations([DeviceOrientation.portraitUp]);
+      SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
+    }
     super.dispose();
   }
 
@@ -98,7 +152,6 @@ class _PlayerScreenState extends ConsumerState<PlayerScreen> {
       playerService.seekForward();
       setState(() => _seekDirection = _SeekDirection.forward);
     }
-    // Keep controls visible and reset timer
     if (_controlsVisible) _startHideTimer();
     _clearSeekFeedback();
   }
@@ -222,6 +275,17 @@ class _PlayerScreenState extends ConsumerState<PlayerScreen> {
 
   @override
   Widget build(BuildContext context) {
+    // iOS with native player: show black screen while native player is on top
+    if (_useNativePlayer) {
+      return const Scaffold(
+        backgroundColor: Colors.black,
+        body: Center(
+          child: CircularProgressIndicator(color: Colors.white),
+        ),
+      );
+    }
+
+    // Android: full custom player UI with media_kit
     final l10n = AppLocalizations.of(context)!;
     final playerService = ref.watch(playerServiceProvider);
 
@@ -270,7 +334,7 @@ class _PlayerScreenState extends ConsumerState<PlayerScreen> {
               },
             ),
 
-          // 3. Full-screen gesture detector (tap = toggle controls, double-tap = seek)
+          // 3. Gesture detector (tap = toggle controls, double-tap = seek)
           if (!_isLoading && _error == null)
             Positioned.fill(
               child: GestureDetector(
@@ -282,7 +346,7 @@ class _PlayerScreenState extends ConsumerState<PlayerScreen> {
               ),
             ),
 
-          // 4. Seek feedback (non-interactive)
+          // 4. Seek feedback
           if (_seekDirection != null)
             IgnorePointer(
               child: Center(
@@ -298,7 +362,7 @@ class _PlayerScreenState extends ConsumerState<PlayerScreen> {
               ),
             ),
 
-          // 5. Controls gradient background (non-interactive)
+          // 5. Controls gradient
           if (_controlsVisible && !_isLoading && _error == null)
             IgnorePointer(
               child: Container(
@@ -317,7 +381,7 @@ class _PlayerScreenState extends ConsumerState<PlayerScreen> {
               ),
             ),
 
-          // 6. Controls (interactive buttons)
+          // 6. Controls
           if (_controlsVisible && !_isLoading && _error == null)
             SafeArea(
               child: Column(
@@ -357,38 +421,6 @@ class _PlayerScreenState extends ConsumerState<PlayerScreen> {
                         tooltip: l10n.subtitles,
                         onPressed: _showSubtitlePicker,
                       ),
-                      // PiP button (iOS only)
-                      if (Platform.isIOS)
-                        FutureBuilder<bool>(
-                          future: playerService.isPiPSupported,
-                          builder: (context, snapshot) {
-                            if (snapshot.data != true) return const SizedBox.shrink();
-                            return IconButton(
-                              icon: const Icon(
-                                Icons.picture_in_picture_alt,
-                                color: Colors.white,
-                              ),
-                              tooltip: 'Picture in Picture',
-                              onPressed: () async {
-                                final nav = Navigator.of(context);
-                                final success = await playerService.startPiP();
-                                if (success && mounted) {
-                                  nav.pop();
-                                }
-                              },
-                            );
-                          },
-                        ),
-                      // AirPlay button (iOS only)
-                      if (Platform.isIOS)
-                        IconButton(
-                          icon: const Icon(Icons.airplay, color: Colors.white),
-                          tooltip: 'AirPlay',
-                          onPressed: () {
-                            const MethodChannel('com.alyplayer/airplay')
-                                .invokeMethod('showRoutePicker');
-                          },
-                        ),
                     ],
                   ),
                   const Spacer(),

@@ -16,6 +16,8 @@ import UIKit
     if let controller = window?.rootViewController as? FlutterViewController {
       PiPManager.shared.register(with: controller.binaryMessenger)
       AirPlayManager.shared.register(with: controller.binaryMessenger)
+      NativeVideoPlayer.shared.register(with: controller.binaryMessenger)
+      NativeVideoPlayer.shared.setRootViewController(controller)
     }
 
     return super.application(application, didFinishLaunchingWithOptions: launchOptions)
