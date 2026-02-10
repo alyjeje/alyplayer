@@ -60,6 +60,20 @@ class _PlayerScreenState extends ConsumerState<PlayerScreen> {
         return;
       }
 
+      // AVPlayer doesn't support .mkv or .avi — fall back to media_kit
+      final url = channel.streamUrl.toLowerCase();
+      if (url.endsWith('.mkv') || url.endsWith('.avi')) {
+        _fallbackToMediaKit();
+        return;
+      }
+
+      // AVPlayer can't play raw .ts (MPEG-TS) but Xtream servers serve HLS
+      // when you change the extension to .m3u8
+      var playerUrl = channel.streamUrl;
+      if (playerUrl.endsWith('.ts')) {
+        playerUrl = '${playerUrl.substring(0, playerUrl.length - 3)}.m3u8';
+      }
+
       _nativePlayer = NativePlayerService();
 
       // When native player is dismissed (user taps Done), pop this screen
@@ -68,24 +82,28 @@ class _PlayerScreenState extends ConsumerState<PlayerScreen> {
       };
 
       final success = await _nativePlayer!.presentPlayer(
-        url: channel.streamUrl,
+        url: playerUrl,
         title: channel.name,
       );
 
       if (!success && mounted) {
-        // Fallback to media_kit if native player fails
-        setState(() => _useNativePlayer = false);
-        _loadChannel();
-        SystemChrome.setPreferredOrientations([
-          DeviceOrientation.landscapeLeft,
-          DeviceOrientation.landscapeRight,
-        ]);
-        SystemChrome.setEnabledSystemUIMode(SystemUiMode.immersiveSticky);
-        _startHideTimer();
+        _fallbackToMediaKit();
       }
     } catch (e) {
       if (mounted) Navigator.of(context).pop();
     }
+  }
+
+  /// Fall back to media_kit player (Android-style controls).
+  void _fallbackToMediaKit() {
+    setState(() => _useNativePlayer = false);
+    _loadChannel();
+    SystemChrome.setPreferredOrientations([
+      DeviceOrientation.landscapeLeft,
+      DeviceOrientation.landscapeRight,
+    ]);
+    SystemChrome.setEnabledSystemUIMode(SystemUiMode.immersiveSticky);
+    _startHideTimer();
   }
 
   /// Android: Load channel into media_kit player.

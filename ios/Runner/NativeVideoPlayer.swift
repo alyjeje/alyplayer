@@ -77,8 +77,13 @@ class NativeVideoPlayer: NSObject {
         // Configure audio for background playback
         PiPManager.configureAudioSession()
 
-        // Create AVPlayer
-        let item = AVPlayerItem(asset: AVURLAsset(url: videoURL))
+        // Create AVPlayer with custom headers (some IPTV servers require User-Agent)
+        let asset = AVURLAsset(url: videoURL, options: [
+            "AVURLAssetHTTPHeaderFieldsKey": [
+                "User-Agent": "AlyPlayer/1.0",
+            ]
+        ])
+        let item = AVPlayerItem(asset: asset)
         let avPlayer = AVPlayer(playerItem: item)
         avPlayer.allowsExternalPlayback = true
         player = avPlayer
