@@ -3,7 +3,13 @@ import AVFoundation
 import Flutter
 
 /// Manages Picture-in-Picture using a native AVPlayer + AVPlayerLayer for iOS.
-/// The AVPlayerLayer must be properly sized and visible for iOS to render PiP frames.
+///
+/// Key rules for iOS PiP to work:
+/// - AVPlayerLayer must be ON TOP of Flutter (not behind, not hidden)
+/// - alpha must be 1.0 (not 0.01, not 0)
+/// - isHidden must be false
+/// - frame must be on-screen (no negative x/y)
+/// - layer must have non-zero size
 class PiPManager: NSObject {
     static let shared = PiPManager()
 
@@ -65,12 +71,13 @@ class PiPManager: NSObject {
     // MARK: - Audio Session
 
     /// Configure audio session for background playback.
-    /// Called both at app launch and before PiP.
+    /// Called at app launch and before PiP.
     static func configureAudioSession() {
         do {
             let session = AVAudioSession.sharedInstance()
             try session.setCategory(.playback, mode: .moviePlayback, options: [])
             try session.setActive(true)
+            print("[PiPManager] Audio session configured OK")
         } catch {
             print("[PiPManager] Audio session error: \(error)")
         }
@@ -88,7 +95,10 @@ class PiPManager: NSObject {
     // MARK: - Start PiP
 
     private func startPiP(url: String, positionSeconds: Double, result: @escaping FlutterResult) {
+        print("[PiPManager] startPiP called with url: \(url.prefix(80))...")
+
         guard AVPictureInPictureController.isPictureInPictureSupported() else {
+            print("[PiPManager] PiP not supported on this device")
             result(FlutterError(code: "UNSUPPORTED", message: "PiP not supported", details: nil))
             return
         }
@@ -115,35 +125,39 @@ class PiPManager: NSObject {
             player.seek(to: CMTime(seconds: positionSeconds, preferredTimescale: 1000))
         }
 
-        // Create AVPlayerLayer with proper size — iOS REQUIRES the layer to be
-        // visible and rendering frames for PiP to show a window
+        // Create AVPlayerLayer
         let layer = AVPlayerLayer(player: player)
         layer.videoGravity = .resizeAspect
         playerLayer = layer
 
         guard let window = getKeyWindow() else {
+            print("[PiPManager] No key window found!")
             result(FlutterError(code: "NO_WINDOW", message: "No key window", details: nil))
             cleanupNativePlayer()
             return
         }
 
-        // Container: full screen size, inserted BEHIND the Flutter view
-        // so it's not visible to the user, but iOS still renders the layer
-        let screenBounds = window.bounds
-        let container = UIView(frame: screenBounds)
-        container.backgroundColor = .black
-        layer.frame = container.bounds
+        // CRITICAL: Container must be ON TOP of Flutter, visible, on-screen, alpha=1
+        // 1x1 pixel in top-left corner — user won't see it but iOS renders the layer
+        let container = UIView(frame: CGRect(x: 0, y: 0, width: 1, height: 1))
+        container.clipsToBounds = true
+        container.backgroundColor = .clear
+        container.isHidden = false
+        container.alpha = 1.0
+        layer.frame = CGRect(x: 0, y: 0, width: 1, height: 1)
         container.layer.addSublayer(layer)
         containerView = container
 
-        // Insert at index 0 = behind Flutter's view
-        window.insertSubview(container, at: 0)
+        // addSubview = ON TOP of all existing subviews (including Flutter)
+        window.addSubview(container)
+        print("[PiPManager] Container added ON TOP of window at (0,0) 1x1")
 
         // Start playback
         player.play()
 
-        // Create PiP controller
+        // Create PiP controller from the layer
         guard let pipCtrl = AVPictureInPictureController(playerLayer: layer) else {
+            print("[PiPManager] Failed to create AVPictureInPictureController")
             result(FlutterError(code: "PIP_FAILED", message: "Could not create PiP controller", details: nil))
             cleanupNativePlayer()
             return
@@ -153,27 +167,34 @@ class PiPManager: NSObject {
         // Enable automatic PiP when app goes to background (iOS 14.2+)
         if #available(iOS 14.2, *) {
             pipCtrl.canStartPictureInPictureAutomaticallyFromInline = true
+            print("[PiPManager] canStartPictureInPictureAutomaticallyFromInline = true")
         }
 
         pipController = pipCtrl
         pendingResult = result
 
-        // Wait for player item to be ready, then start PiP
-        statusObservation = playerItem.observe(\.status, options: [.new]) { [weak self] item, _ in
+        // KVO: wait for player item readyToPlay
+        statusObservation = playerItem.observe(\.status, options: [.new, .initial]) { [weak self] item, _ in
             guard let self = self else { return }
 
             DispatchQueue.main.async {
+                print("[PiPManager] AVPlayerItem status: \(item.status.rawValue) (0=unknown, 1=ready, 2=failed)")
+
                 switch item.status {
                 case .readyToPlay:
                     self.statusObservation?.invalidate()
                     self.statusObservation = nil
-                    // Bring container to front so layer renders visible frames
-                    window.bringSubviewToFront(container)
+                    print("[PiPManager] Player ready! Tracks: \(item.tracks.count)")
+                    for track in item.tracks {
+                        print("[PiPManager]   Track: \(track.assetTrack?.mediaType.rawValue ?? "unknown")")
+                    }
+                    print("[PiPManager] isPictureInPicturePossible = \(pipCtrl.isPictureInPicturePossible)")
                     self.waitForPiPPossibleThenStart(pipCtrl: pipCtrl)
 
                 case .failed:
                     self.statusObservation?.invalidate()
                     self.statusObservation = nil
+                    print("[PiPManager] Player FAILED: \(item.error?.localizedDescription ?? "unknown")")
                     if let pending = self.pendingResult {
                         self.pendingResult = nil
                         pending(FlutterError(
@@ -190,9 +211,10 @@ class PiPManager: NSObject {
             }
         }
 
-        // Timeout: if not ready after 10 seconds, fail
+        // Timeout: 10 seconds
         DispatchQueue.main.asyncAfter(deadline: .now() + 10.0) { [weak self] in
             guard let self = self, let pending = self.pendingResult else { return }
+            print("[PiPManager] TIMEOUT: player not ready after 10s")
             self.pendingResult = nil
             self.statusObservation?.invalidate()
             self.statusObservation = nil
@@ -203,17 +225,19 @@ class PiPManager: NSObject {
         }
     }
 
-    /// Use KVO on isPictureInPicturePossible to know exactly when we can start PiP
+    /// KVO on isPictureInPicturePossible — triggers when iOS is ready for PiP
     private func waitForPiPPossibleThenStart(pipCtrl: AVPictureInPictureController) {
         if pipCtrl.isPictureInPicturePossible {
+            print("[PiPManager] PiP possible immediately — starting!")
             startPiPNow(pipCtrl: pipCtrl)
             return
         }
 
-        // Observe isPictureInPicturePossible
-        possibleObservation = pipCtrl.observe(\.isPictureInPicturePossible, options: [.new]) { [weak self] ctrl, change in
+        print("[PiPManager] PiP not yet possible — observing...")
+        possibleObservation = pipCtrl.observe(\.isPictureInPicturePossible, options: [.new]) { [weak self] ctrl, _ in
             guard let self = self else { return }
             DispatchQueue.main.async {
+                print("[PiPManager] isPictureInPicturePossible changed to: \(ctrl.isPictureInPicturePossible)")
                 if ctrl.isPictureInPicturePossible {
                     self.possibleObservation?.invalidate()
                     self.possibleObservation = nil
@@ -224,6 +248,7 @@ class PiPManager: NSObject {
     }
 
     private func startPiPNow(pipCtrl: AVPictureInPictureController) {
+        print("[PiPManager] Calling startPictureInPicture()!")
         pipCtrl.startPictureInPicture()
         if let pending = pendingResult {
             pendingResult = nil
@@ -234,6 +259,7 @@ class PiPManager: NSObject {
     // MARK: - Stop PiP
 
     private func stopPiP(result: @escaping FlutterResult) {
+        print("[PiPManager] stopPiP called")
         pipController?.stopPictureInPicture()
         cleanupNativePlayer()
         result(true)
@@ -258,6 +284,7 @@ class PiPManager: NSObject {
         isPiPActive = false
         currentUrl = nil
         pendingResult = nil
+        print("[PiPManager] Cleanup done")
     }
 
     private func getCurrentPosition() -> Double {
@@ -274,15 +301,21 @@ extension PiPManager: AVPictureInPictureControllerDelegate {
     func pictureInPictureControllerWillStartPictureInPicture(
         _ pictureInPictureController: AVPictureInPictureController
     ) {
+        print("[PiPManager] willStartPictureInPicture")
         isPiPActive = true
-        // PiP window is now taking over — hide the container
-        containerView?.isHidden = true
         methodChannel?.invokeMethod("onPiPStarted", arguments: nil)
+    }
+
+    func pictureInPictureControllerDidStartPictureInPicture(
+        _ pictureInPictureController: AVPictureInPictureController
+    ) {
+        print("[PiPManager] didStartPictureInPicture — PiP is now active!")
     }
 
     func pictureInPictureControllerDidStopPictureInPicture(
         _ pictureInPictureController: AVPictureInPictureController
     ) {
+        print("[PiPManager] didStopPictureInPicture")
         let position = getCurrentPosition()
         isPiPActive = false
         methodChannel?.invokeMethod("onPiPStopped", arguments: [
@@ -295,7 +328,7 @@ extension PiPManager: AVPictureInPictureControllerDelegate {
         _ pictureInPictureController: AVPictureInPictureController,
         failedToStartPictureInPictureWithError error: Error
     ) {
-        print("[PiPManager] Failed to start PiP: \(error)")
+        print("[PiPManager] FAILED to start PiP: \(error)")
         isPiPActive = false
         methodChannel?.invokeMethod("onPiPError", arguments: [
             "error": error.localizedDescription
@@ -307,6 +340,7 @@ extension PiPManager: AVPictureInPictureControllerDelegate {
         _ pictureInPictureController: AVPictureInPictureController,
         restoreUserInterfaceForPictureInPictureStopWithCompletionHandler completionHandler: @escaping (Bool) -> Void
     ) {
+        print("[PiPManager] restoreUserInterface")
         let position = getCurrentPosition()
         methodChannel?.invokeMethod("onPiPRestoreUI", arguments: [
             "position": position
