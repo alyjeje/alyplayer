@@ -13,6 +13,7 @@ class NativeVideoPlayer: NSObject {
     private var playerVC: AVPlayerViewController?
     private var player: AVPlayer?
     private var dismissCheckTimer: Timer?
+    private var _isPiPActive = false
 
     private override init() {
         super.init()
@@ -169,12 +170,7 @@ class NativeVideoPlayer: NSObject {
     }
 
     private func isPiPActive() -> Bool {
-        if #available(iOS 15.0, *) {
-            // During PiP, the VC is dismissed but we don't want to trigger cleanup
-            return playerVC?.isPlayingInPictureInPicture ?? false
-        }
-        // Fallback: check if player is still playing
-        return player?.rate ?? 0 > 0 && playerVC?.presentingViewController == nil
+        return _isPiPActive
     }
 
     // MARK: - Helpers
@@ -189,6 +185,7 @@ class NativeVideoPlayer: NSObject {
         print("[NativePlayer] cleanup")
         dismissCheckTimer?.invalidate()
         dismissCheckTimer = nil
+        _isPiPActive = false
         player?.pause()
         player = nil
         playerVC = nil
@@ -203,6 +200,7 @@ extension NativeVideoPlayer: AVPlayerViewControllerDelegate {
         _ playerViewController: AVPlayerViewController
     ) {
         print("[NativePlayer] PiP will start")
+        _isPiPActive = true
         // Stop dismiss monitor during PiP (the modal gets dismissed but player continues)
         dismissCheckTimer?.invalidate()
         dismissCheckTimer = nil
@@ -219,6 +217,7 @@ extension NativeVideoPlayer: AVPlayerViewControllerDelegate {
         _ playerViewController: AVPlayerViewController
     ) {
         print("[NativePlayer] PiP stopped")
+        _isPiPActive = false
         let position = getCurrentPosition()
         methodChannel?.invokeMethod("onPiPStopped", arguments: [
             "positionSeconds": position
